@@ -10,13 +10,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorAppInWebAssembly", "BlazorAppInWebAssembly\BlazorAppInWebAssembly.csproj", "{988DCB50-6B77-4A57-A78A-E94ABBAFC0B7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Covid", "Covid", "{8E136A4D-63CE-4F3E-9ACD-901B477027B4}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CovidCounter", "CovidCounter", "{8E136A4D-63CE-4F3E-9ACD-901B477027B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Covid.Client", "Covid.Client\Covid.Client.csproj", "{4EB00F0D-EE7F-410D-BD8E-EEA33F04CF5E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Covid.Server", "Covid.Server\Covid.Server.csproj", "{A62C5A33-CF18-4085-ABB1-25C3AD006487}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Covid.Shared", "Covid.Shared\Covid.Shared.csproj", "{89F03514-056E-4008-9496-B393F0677A7F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestCase", "TestCase", "{232E9D9A-2430-427E-925C-B437DD2658A5}"
+	ProjectSection(SolutionItems) = preProject
+		TestCase\CovidCounter.postman_collection.json = TestCase\CovidCounter.postman_collection.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

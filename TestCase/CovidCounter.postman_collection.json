@@ -1,0 +1,68 @@
+{
+	"info": {
+		"_postman_id": "744431ff-5467-4931-b37a-e7143c9cee49",
+		"name": "CovidCounter",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Api_GetCovidCounter",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5002/api/CovidCounter/GetCounter?Area=USA",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"api",
+						"CovidCounter",
+						"GetCounter"
+					],
+					"query": [
+						{
+							"key": "Area",
+							"value": "USA"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Api_PublishCounter",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5002/api/CovidCounter/PublishCounter?Area=USA&Count=3000000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"api",
+						"CovidCounter",
+						"PublishCounter"
+					],
+					"query": [
+						{
+							"key": "Area",
+							"value": "USA"
+						},
+						{
+							"key": "Count",
+							"value": "3000000"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
