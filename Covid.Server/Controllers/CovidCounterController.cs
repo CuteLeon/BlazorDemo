@@ -6,6 +6,7 @@ using Covid.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 
 namespace Covid.Server.Controllers
 {
@@ -13,16 +14,19 @@ namespace Covid.Server.Controllers
     [ApiController]
     public class CovidCounterController : ControllerBase
     {
-        public CovidCounterController(IDistributedCache cache)
+        public CovidCounterController(ILogger<CovidCounterController> logger, IDistributedCache cache)
         {
+            Logger = logger;
             Cache = cache;
         }
 
+        public ILogger<CovidCounterController> Logger { get; }
         public IDistributedCache Cache { get; }
 
         [HttpGet]
         public async Task<IActionResult> GetCounterAsync(string area)
         {
+            this.Logger.LogInformation($"Get Counter: {area}");
             var count = await Cache.GetStringAsync($"{area}.Counter");
 
             if (string.IsNullOrEmpty(count))
@@ -34,6 +38,7 @@ namespace Covid.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> PublishCounterAsync([FromForm] AreaCounter counter)
         {
+            this.Logger.LogWarning($"Publish Counter: {counter.Area} => {counter.Count}");
             try
             {
                 await Cache.SetStringAsync($"{counter.Area}.Counter", counter.Count);
