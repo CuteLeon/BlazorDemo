@@ -109,6 +109,20 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 
 ​	在编译时每个razor文件都会对应一个类。
 
+### 关联后台代码
+
+#### Partial
+
+​	增加一个相同名称空间和类型的C#类，并将此类继承自ComponentBase，并为此类增加Partial修饰；
+
+​	此C#类将和对应的razor组件以部分类合并。
+
+#### Inherits
+
+​	增加一个C#基类，并在razor通过@inherits指令继承自此C#类。
+
+​	此razor将通过基类访问C#类。
+
 ### 引用
 
 ​	Razor可以嵌套，直接在Razor里通过标签引用其他Razor
@@ -124,6 +138,10 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 #### @page *"/route"*
 
 ​	指定页面的路由
+
+#### @inherits
+
+​	继承指定的组件
 
 #### @inject *service* *name*
 
