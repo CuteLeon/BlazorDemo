@@ -46,3 +46,9 @@
 1. 不支持离线运行
 2. 网络延迟影响比较大
 3. 可扩展性不佳
+
+# ASP.NET Core Blazor
+
+> ASP.NET Core hosted: 使用 ASP.NET Core 平台的 Blazor
+>
+> Progressive Web Application: 改进的Web应用程序，可以使应用程序脱离浏览器运行
