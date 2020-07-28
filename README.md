@@ -52,3 +52,84 @@
 > ASP.NET Core hosted: 使用 ASP.NET Core 平台的 Blazor
 >
 > Progressive Web Application: 改进的Web应用程序，可以使应用程序脱离浏览器运行
+
+## 目录
+
+### wwwroot
+
+​	静态资源
+
+#### index.html
+
+​	作为SPA的宿主页面
+
+### Pages
+
+​	页面组件
+
+### Shared
+
+​	共享组件
+
+### Programs.cs
+
+​	程序的入口，用于创建、配置并启动Host。
+
+```csharp
+builder.RootComponents.Add<App>("app");
+```
+
+​	使用App.razor作为根组件，对应 wwwroot/index.html 内的 \<app>Loading...\</app> 标签。
+
+```csharp
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+```
+
+​	向DI容器注入HttpClient服务。
+
+### App.Razor
+
+```html
+<Router AppAssembly="@typeof(Program).Assembly">
+```
+
+​	声明程序集，并扫描程序集查找可以被路由的组件。
+
+```html
+<Found Context="routeData">
+    <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+</Found>
+```
+
+​	配置路由参数并配置页面布局模板。
+
+## Razor
+
+​	Razor为Blazor的组件，Razor文件要求文件名首字母大写。
+
+​	在编译时每个razor文件都会对应一个类。
+
+### 引用
+
+​	Razor可以嵌套，直接在Razor里通过标签引用其他Razor
+
+```HTML
+@page "/"
+<h1>Hello, world!</h1>
+<SurveyPrompt Title="How is Blazor working for you?" />
+```
+
+### 指令
+
+#### @page *"/route"*
+
+​	指定页面的路由
+
+#### @inject *service* *name*
+
+​	注入服务
+
+#### @code *{ ... }*
+
+​	编写C#代码
+
