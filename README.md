@@ -178,3 +178,38 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 #### [Parameter]
 
 ​	使用`[Parameter]`修饰公开属性作为Razor组件的参数，可以在引用此组件时在标签内为属性赋值
+
+
+
+## WebAssembly 与 WebAPI 项目跨域请求(CORS)问题
+
+​	因为客户端WebAssembly和服务端WebAPI部署在独立的端口，Blazor使用HttpClient请求WebAPI时会因为CORS被WebAPI拒绝。
+
+​	服务端WebAPI需要启用开放的CORS政策：
+
+```csharp
+public class Startup
+{
+	public void ConfigureServices(IServiceCollection services)
+    {
+    	services.AddCors(options =>
+        {
+        	options.AddPolicy(
+            	"OpenCorsPolicy",
+                builder => builder.AllowAnyOrigin());
+        });
+
+        services.AddStackExchangeRedisCache(options =>
+		{
+            options.Configuration = "localhost:6379";
+            options.InstanceName = "CovidRedis";
+        });
+	}
+    
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        app.UseCors("OpenCorsPolicy");
+    }
+}
+```
+

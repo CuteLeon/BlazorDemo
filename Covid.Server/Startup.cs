@@ -25,6 +25,13 @@ namespace Covid.Server
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy(
+                    "OpenCorsPolicy",
+                    builder => builder.AllowAnyOrigin());
+            });
+
             services.AddStackExchangeRedisCache(options =>
             {
                 options.Configuration = "localhost:6379";
@@ -46,6 +53,8 @@ namespace Covid.Server
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.UseCors("OpenCorsPolicy");
 
             app.UseEndpoints(endpoints =>
             {
