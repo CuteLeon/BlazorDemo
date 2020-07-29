@@ -17,6 +17,13 @@ namespace Covid.Client.Pages
         protected override Task OnInitializedAsync()
         {
             this.Logger.LogInformation(nameof(this.OnInitializedAsync));
+
+            this.Areas = new List<string>
+            {
+                "China",
+                "USA",
+                "UK",
+            };
             return base.OnInitializedAsync();
         }
 

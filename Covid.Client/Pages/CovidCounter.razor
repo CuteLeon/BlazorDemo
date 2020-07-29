@@ -1,0 +1,34 @@
+﻿@page "/CovidCounter/{Area}"
+
+<div class="card border-@Theme mb-3" style="max-width: 18rem;">
+    <div class="card-header"><a href="/CovidCounter/@Area" class="h3 text-@Theme">@Area</a></div>
+    <div class="card-body text-@Theme">
+        <h2 class="card-title text-center h1">@(Count.HasValue ? Count.Value.ToString() : "--")</h2>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Area { get; set; }
+
+    private int? count = null;
+
+    public int? Count
+    {
+        get => count;
+        set
+        {
+            count = value.HasValue ? Math.Max(0, value.Value) : value;
+            this.Theme = GetTheme(count);
+        }
+    }
+
+    public string Theme { get; set; } = "success";
+
+    private string GetTheme(int? count) => count switch
+    {
+        int c when c <= 0 => "Success",
+        int c when c < 10000 => "Warning",
+        _ => "Danger",
+    };
+}

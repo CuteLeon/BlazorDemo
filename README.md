@@ -103,11 +103,33 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 
 ​	配置路由参数并配置页面布局模板。
 
+### _Imports.razor
+
+​	Page 引用名称空间
+
 ## Razor
 
 ​	Razor为Blazor的组件，Razor文件要求文件名首字母大写。
 
 ​	在编译时每个razor文件都会对应一个类。
+
+### 覆写方法
+
+#### OnInitialized[Async]
+
+​	初始化
+
+#### OnParametersSet[Async]
+
+​	设置参数
+
+#### OnAfterRender[Async]
+
+​	渲染后
+
+#### ShouldRender
+
+​	请求渲染
 
 ### 关联后台代码
 
@@ -137,7 +159,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 
 #### @page *"/route"*
 
-​	指定页面的路由
+​	指定页面的路由，可以通过`{\}`为路由设置参数
 
 #### @inherits
 
@@ -145,9 +167,14 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 
 #### @inject *service* *name*
 
-​	注入服务
+​	注入服务，也可以在C#里通过`[Inject]`特性修饰服务属性以注入
 
 #### @code *{ ... }*
 
 ​	编写C#代码
 
+### 公开参数
+
+#### [Parameter]
+
+​	使用`[Parameter]`修饰公开属性作为Razor组件的参数，可以在引用此组件时在标签内为属性赋值

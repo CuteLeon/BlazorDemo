@@ -1,16 +1,23 @@
 ﻿@page "/CovidCounters"
 
-<h1>Covid Counter</h1>
+    <div class="row justify-content-around" style="margin:10px">
+        <h1>Covid Counter</h1>
+        <p>Areas count: @Areas.Count()</p>
+        <button class="btn btn-primary" @onclick="RefreshAreaCounters">Refresh</button>
+    </div>
 
-<p>Current count: @currentCount</p>
+    <div class="card-deck">
+        @foreach (var area in Areas)
+        {
+            <CovidCounter Area="@area" />
+        }
+    </div>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+    @code {
+        [Parameter]
+        public IEnumerable<string> Areas { get; set; }
 
-@code {
-    private int currentCount = 0;
-
-    private void IncrementCount()
-    {
-        currentCount++;
+        private void RefreshAreaCounters()
+        {
+        }
     }
-}
