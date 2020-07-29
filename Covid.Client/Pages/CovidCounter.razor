@@ -27,8 +27,9 @@
 
     private string GetTheme(int? count) => count switch
     {
-        int c when c <= 0 => "Success",
-        int c when c < 10000 => "Warning",
-        _ => "Danger",
+        null => "secondary",
+        int c when c <= 0 => "success",
+        int c when c < 10000 => "warning",
+        _ => "danger",
     };
 }

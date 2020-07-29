@@ -22,11 +22,21 @@ namespace Covid.Client.Pages
 
         protected override async Task OnParametersSetAsync()
         {
-            this.Logger.LogInformation($"{nameof(this.OnParametersSetAsync)}: {nameof(this.Area)}={this.Area}");
-            var countString = await this.HttpClient.GetFromJsonAsync<AreaCounter>(string.Format(GetCountUrl, this.Area));
-            this.Logger.LogWarning($"调试: {nameof(countString)}={countString}");
-
-            // this.Count = int.TryParse(countString, out int result) ? new int?(result) : null;
+            int? count = null;
+            try
+            {
+                this.Logger.LogInformation($"{nameof(this.OnParametersSetAsync)}: {nameof(this.Area)}={this.Area}");
+                var areaCounter = await this.HttpClient.GetFromJsonAsync<AreaCounter>(string.Format(GetCountUrl, this.Area));
+                count = int.TryParse(areaCounter.Count, out int result) ? new int?(result) : null;
+            }
+            catch (Exception ex)
+            {
+                this.Logger.LogError(ex, $"{nameof(this.OnParametersSetAsync)}: {nameof(this.Area)}={this.Area}");
+            }
+            finally
+            {
+                this.Count = count;
+            }
 
             await base.OnParametersSetAsync();
         }
