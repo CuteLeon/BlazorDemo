@@ -179,6 +179,30 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 
 ​	使用`[Parameter]`修饰公开属性作为Razor组件的参数，可以在引用此组件时在标签内为属性赋值
 
+### 数据绑定
+
+#### 单向绑定
+
+​	允许单向绑定C#的Public属性到Blazor
+
+```html
+<p>@DateTime.Now</p>
+```
+
+#### 双向绑定
+
+​	允许双向绑定数据和UI
+
+```html
+<p>@Name</p>
+<hr />
+<input @bind=this.Name @bind:event="oninput" />
+
+@code {
+    public string Name { get; set; }
+}
+```
+
 
 
 ## WebAssembly 与 WebAPI 项目跨域请求(CORS)问题
