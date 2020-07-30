@@ -11,6 +11,6 @@ namespace Covid.Client.Services
             this.HttpClient = httpClient;
         }
 
-        public HttpClient HttpClient { get; set; }
+        protected readonly HttpClient HttpClient;
     }
 }
