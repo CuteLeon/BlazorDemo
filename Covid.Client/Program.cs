@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Covid.Client.Services;
 
 namespace Covid.Client
 {
@@ -18,6 +19,7 @@ namespace Covid.Client
             builder.RootComponents.Add<App>("app");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5002") });
+            builder.Services.AddScoped<ICovidCounterService, CovidCounterService>();
 
             await builder.Build().RunAsync();
         }
