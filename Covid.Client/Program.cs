@@ -18,8 +18,8 @@ namespace Covid.Client
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("app");
 
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5002") });
-            builder.Services.AddScoped<ICovidCounterService, CovidCounterService>();
+            builder.Services.AddHttpClient<ICovidCounterService, CovidCounterService>(
+                httpClient => httpClient.BaseAddress = new Uri("http://localhost:5002"));
 
             await builder.Build().RunAsync();
         }
