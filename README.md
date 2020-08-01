@@ -203,7 +203,16 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 }
 ```
 
+### 通知刷新
 
+```csharp
+await this.InvokeAsync(() =>
+{
+	this.Count++;
+	// Notify to re-render
+	this.StateHasChanged();
+});
+```
 
 ## WebAssembly 与 WebAPI 项目跨域请求(CORS)问题
 
