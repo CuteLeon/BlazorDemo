@@ -18,12 +18,7 @@ namespace Covid.Client.Pages
         {
             this.Logger.LogInformation(nameof(this.OnInitializedAsync));
 
-            this.Areas = new List<string>
-            {
-                "China",
-                "USA",
-                "UK",
-            };
+            this.Areas = Enumerable.Range(-5, 10).Select(number => $"C_{number}");
             return base.OnInitializedAsync();
         }
 

@@ -15,6 +15,7 @@ namespace Covid.Client.Pages
     public partial class CovidCounter : ComponentBase, IDisposable
     {
         protected readonly Timer Timer = new Timer(3000) { AutoReset = true };
+        protected readonly Random Random = new Random();
 
         [Inject]
         public ILogger<CovidCounter> Logger { get; set; }
@@ -35,7 +36,9 @@ namespace Covid.Client.Pages
             this.Logger.LogWarning($"Timer_Elapsed: Area={Area}, Count={Count}");
             await this.InvokeAsync(() =>
               {
-                  this.Count++;
+                  if (!this.Count.HasValue) return;
+
+                  this.Count += Random.Next(-100, 120);
                   // Notify to re-render
                   this.StateHasChanged();
               });
