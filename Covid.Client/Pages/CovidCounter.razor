@@ -1,9 +1,10 @@
 ﻿@page "/CovidCounter/{Area}"
+@inject NavigationManager navigationManager
 
-<div class="card border-@Theme mb-3" style="max-width: 18rem;">
+<div class="card border-@Theme mb-3 shadow" style="max-width: 18rem;">
     <div class="card-header"><a href="/CovidCounter/@Area" class="h3 text-@Theme">@Area</a></div>
     <div class="card-body text-@Theme">
-        <h2 class="card-title text-center h1" @onclick="ClickLabel">@(Count.HasValue ? Count.Value.ToString() : "--")</h2>
+        <h1 class="card-title text-center h1" style="cursor: pointer" @onclick="ClickLabel" @ondblclick="DoubleClickLabel">@(Count.HasValue ? Count.Value.ToString() : "--")</h1>
     </div>
 </div>
 
@@ -37,5 +38,10 @@
     {
         if (this.Count.HasValue) this.Count++;
         this.Logger.LogInformation(this.Count.ToString());
+    }
+
+    private void DoubleClickLabel()
+    {
+        navigationManager.NavigateTo($"/PublishCounter/{Area}");
     }
 }

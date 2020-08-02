@@ -33,7 +33,7 @@ namespace Covid.Client.Pages
 
         private async void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            this.Logger.LogWarning($"Timer_Elapsed: Area={Area}, Count={Count}");
+            this.Logger.LogInformation($"Timer_Elapsed: Area={Area}, Count={Count}");
             await this.InvokeAsync(() =>
               {
                   if (!this.Count.HasValue) return;
@@ -63,7 +63,7 @@ namespace Covid.Client.Pages
             }
             catch (Exception ex)
             {
-                this.Logger.LogError(ex, $"{nameof(this.OnParametersSetAsync)}: {nameof(this.Area)}={this.Area}");
+                this.Logger.LogWarning(ex, $"{nameof(this.OnParametersSetAsync)}: {nameof(this.Area)}={this.Area}");
             }
             finally
             {

@@ -161,6 +161,8 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 
 ​	指定页面的路由，可以通过`{\}`为路由设置参数
 
+​	可以同时指派多个路由
+
 #### @inherits
 
 ​	继承指定的组件
@@ -246,3 +248,30 @@ public class Startup
 }
 ```
 
+## EditForm
+
+### Input组件
+
+#### InputText
+
+​	文本输入框
+
+#### InputTextArea
+
+​	多行文本输入框
+
+#### InputNumber
+
+​	数字输入框
+
+#### InputSelect
+
+​	下拉框
+
+#### InputDate
+
+​	输入日期
+
+#### InputCheckBox
+
+​	勾选框

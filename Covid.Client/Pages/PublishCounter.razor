@@ -1,0 +1,68 @@
+﻿@page "/PublishCounter"
+@page "/PublishCounter/{Area}"
+
+<h3>PublishCounter</h3>
+
+<EditForm Model="@AreaCounterEntity" OnValidSubmit="SubmitAreaCounter">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <p><strong>Area</strong></p>
+    <InputText @bind-Value="AreaCounterEntity.Area" />
+    <p><strong>Count</strong></p>
+    <InputNumber @bind-Value="AreaCounterEntity.Count" />
+    <p><strong>PublishDate</strong></p>
+    <InputDate @bind-Value="AreaCounterEntity.PublishDate" />
+    <p><strong>DataSource</strong></p>
+    <InputSelect TValue="DataSources" @bind-Value="AreaCounterEntity.DataSource">
+        @foreach (var item in Enum.GetValues(typeof(DataSources)))
+        {
+            <option value="@item">@item</option>
+        }
+    </InputSelect>
+    <p><strong>Hide</strong></p>
+    <InputCheckbox @bind-Value="AreaCounterEntity.Hide" />
+    <p><strong>Remark</strong></p>
+    <InputTextArea @bind-Value="AreaCounterEntity.Remark" />
+
+    <hr />
+    <button type="submit" class="btn btn-primary">Submit</button>
+</EditForm>
+
+@code {
+    public AreaCounter AreaCounterEntity { get; set; } = new AreaCounter() { Area = "C_" };
+
+    [Parameter]
+    public string Area { get; set; }
+
+    [Inject]
+    public ICovidCounterService CovidCounterService { get; set; }
+
+    [Inject]
+    public ILogger<PublishCounter> Logger { get; set; }
+
+    private async Task SubmitAreaCounter()
+    {
+        Logger.LogInformation($"{nameof(SubmitAreaCounter)}: {AreaCounterEntity.Area}=>{AreaCounterEntity.Count}");
+        var result = await CovidCounterService.PublishCounterAsync(this.AreaCounterEntity);
+        this.Logger.LogInformation($"{nameof(SubmitAreaCounter)}: {nameof(result)}=>{result}");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation($"{nameof(OnInitializedAsync)}: {nameof(Area)}=>{Area}");
+        try
+        {
+            if (!string.IsNullOrEmpty(Area))
+            {
+                AreaCounterEntity = await CovidCounterService.GetAreaCounterAsync(Area);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, $"{nameof(OnInitializedAsync)}: {nameof(Area)}=>{Area}");
+        }
+
+        await base.OnInitializedAsync();
+    }
+}
