@@ -3,60 +3,69 @@
 
 <h3>PublishCounter</h3>
 
-<EditForm Model="@AreaCounterEntity" OnValidSubmit="SubmitAreaCounter">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-
-    <div class="form-group row">
-        <label for="@nameof(AreaCounterEntity.Area)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Area)</label>
-        <div class="col-sm-10">
-            <InputText class="form-control" @bind-Value="AreaCounterEntity.Area" />
-        </div>
+@if (Result.HasValue)
+{
+    <div class="alert alert-@(Result.Value?"success":"danger")">
+        @(Result.Value?"发布成功！":"发布失败！")
     </div>
+}
+else
+{
+    <EditForm Model="@AreaCounterEntity" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-    <div class="form-group row">
-        <label for="@nameof(AreaCounterEntity.Count)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Count)</label>
-        <div class="col-sm-10">
-            <InputNumber class="form-control" @bind-Value="AreaCounterEntity.Count" />
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.Area)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Area)</label>
+            <div class="col-sm-10">
+                <InputText class="form-control" @bind-Value="AreaCounterEntity.Area" />
+            </div>
         </div>
-    </div>
 
-    <div class="form-group row">
-        <label for="@nameof(AreaCounterEntity.PublishDate)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.PublishDate)</label>
-        <div class="col-sm-10">
-            <InputDate class="form-control" @bind-Value="AreaCounterEntity.PublishDate" />
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.Count)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Count)</label>
+            <div class="col-sm-10">
+                <InputNumber class="form-control" @bind-Value="AreaCounterEntity.Count" />
+            </div>
         </div>
-    </div>
 
-    <div class="form-group row">
-        <label for="@nameof(AreaCounterEntity.DataSource)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.DataSource)</label>
-        <div class="col-sm-10">
-            <InputSelect TValue="DataSources" class="form-control" @bind-Value="AreaCounterEntity.DataSource">
-                @foreach (var item in Enum.GetValues(typeof(DataSources)))
-                {
-                    <option value="@item">@item</option>
-                }
-            </InputSelect>
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.PublishDate)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.PublishDate)</label>
+            <div class="col-sm-10">
+                <InputDate class="form-control" @bind-Value="AreaCounterEntity.PublishDate" />
+            </div>
         </div>
-    </div>
 
-    <div class="form-group row">
-        <label for="@nameof(AreaCounterEntity.Hide)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Hide)</label>
-        <div class="col-sm-10">
-            <InputCheckbox class="form-control" @bind-Value="AreaCounterEntity.Hide" />
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.DataSource)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.DataSource)</label>
+            <div class="col-sm-10">
+                <InputSelect TValue="DataSources" class="form-control" @bind-Value="AreaCounterEntity.DataSource">
+                    @foreach (var item in Enum.GetValues(typeof(DataSources)))
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </InputSelect>
+            </div>
         </div>
-    </div>
 
-    <div class="form-group row">
-        <label for="@nameof(AreaCounterEntity.Remark)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Remark)</label>
-        <div class="col-sm-10">
-            <InputTextArea class="form-control" @bind-Value="AreaCounterEntity.Remark" />
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.Hide)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Hide)</label>
+            <div class="col-sm-10">
+                <InputCheckbox class="form-control" @bind-Value="AreaCounterEntity.Hide" />
+            </div>
         </div>
-    </div>
 
-    <hr />
-    <button type="submit" class="btn btn-primary">Submit</button>
-</EditForm>
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.Remark)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Remark)</label>
+            <div class="col-sm-10">
+                <InputTextArea class="form-control" @bind-Value="AreaCounterEntity.Remark" />
+            </div>
+        </div>
+
+        <hr />
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </EditForm>
+}
 
 @code {
     public AreaCounter AreaCounterEntity { get; set; } = new AreaCounter() { Area = "C_" };
@@ -70,11 +79,25 @@
     [Inject]
     public ILogger<PublishCounter> Logger { get; set; }
 
-    private async Task SubmitAreaCounter()
+    private bool? Result = null;
+
+    private async Task OnValidSubmit()
     {
-        Logger.LogInformation($"{nameof(SubmitAreaCounter)}: {AreaCounterEntity.Area}=>{AreaCounterEntity.Count}");
-        var result = await CovidCounterService.PublishCounterAsync(this.AreaCounterEntity);
-        this.Logger.LogInformation($"{nameof(SubmitAreaCounter)}: {nameof(result)}=>{result}");
+        Logger.LogInformation($"{nameof(OnValidSubmit)}: {AreaCounterEntity.Area}=>{AreaCounterEntity.Count}");
+        try
+        {
+            var result = await CovidCounterService.PublishCounterAsync(this.AreaCounterEntity);
+            this.Result = result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, $"{nameof(OnValidSubmit)}: {AreaCounterEntity.Area}=>{AreaCounterEntity.Count}");
+            this.Result = false;
+        }
+    }
+
+    private async Task OnInvalidSubmit()
+    {
     }
 
     protected override async Task OnInitializedAsync()
