@@ -1,3 +1,7 @@
+# Blazor
+
+> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/?view=aspnetcore-3.1
+
 # 简介
 
 ​	Blazor 是一个使用 .NET 生成交互式客户端 Web UI 的框架：
@@ -194,3 +198,5 @@ Welcome to your new app.
 - 需要 ASP.NET Core 服务器为应用提供服务。 无服务器部署方案不可行（例如通过 CDN 为应用提供服务的方案）。
 
 # 模板
+
+> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/templates?view=aspnetcore-3.1
