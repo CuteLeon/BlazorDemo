@@ -3,10 +3,10 @@
 
 <h3>PublishCounter</h3>
 
-@if (Result.HasValue)
+@if (Result.Status.HasValue)
 {
-    <div class="alert alert-@(Result.Value?"success":"danger")">
-        @(Result.Value?"发布成功！":"发布失败！")
+    <div class="alert alert-@(Result.Status.Value?"success":"danger")">
+        @Result.Message
     </div>
 }
 else
@@ -19,6 +19,7 @@ else
             <label for="@nameof(AreaCounterEntity.Area)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Area)</label>
             <div class="col-sm-10">
                 <InputText class="form-control" @bind-Value="AreaCounterEntity.Area" />
+                <ValidationMessage For="()=>AreaCounterEntity.Area" />
             </div>
         </div>
 
@@ -79,7 +80,7 @@ else
     [Inject]
     public ILogger<PublishCounter> Logger { get; set; }
 
-    private bool? Result = null;
+    private (bool? Status, string Message) Result = (null, string.Empty);
 
     private async Task OnValidSubmit()
     {
@@ -87,17 +88,21 @@ else
         try
         {
             var result = await CovidCounterService.PublishCounterAsync(this.AreaCounterEntity);
-            this.Result = result;
+            this.Result.Status = result;
+            this.Result.Message = "发布成功！";
         }
         catch (Exception ex)
         {
             Logger.LogWarning(ex, $"{nameof(OnValidSubmit)}: {AreaCounterEntity.Area}=>{AreaCounterEntity.Count}");
-            this.Result = false;
+            this.Result.Status = false;
+            this.Result.Message = $"发布失败！\n{ex.Message}";
         }
     }
 
     private async Task OnInvalidSubmit()
     {
+        Result.Status = false;
+        Result.Message = "表单验证失败！";
     }
 
     protected override async Task OnInitializedAsync()

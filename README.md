@@ -225,6 +225,14 @@ await this.InvokeAsync(() =>
 navigationManager.NavigateTo($"/");
 ```
 
+# 表单验证
+
+​	由EditForm和InputComponent组合实现表单验证功能
+
+- 在Entity上通过DataAnnotations配置验证规则
+- 在\<EditForm /> 内通过 \<DataAnnotationsValidator> 做验证
+- 通过 \<ValidationSummary/> 显示全部冲突信息或通过 \<ValidationMessage For="() => {Entity.Property}" /> 显示目标属性的冲突信息
+
 ## WebAssembly 与 WebAPI 项目跨域请求(CORS)问题
 
 ​	因为客户端WebAssembly和服务端WebAPI部署在独立的端口，Blazor使用HttpClient请求WebAPI时会因为CORS被WebAPI拒绝。
