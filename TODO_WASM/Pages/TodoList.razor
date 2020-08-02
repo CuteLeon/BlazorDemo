@@ -1,0 +1,43 @@
+﻿@page "/TodoList"
+
+<h1>To Do (@(TodoItems.Count(todo=>!todo.Done)) / @(TodoItems.Count()))</h1>
+
+<div class="container-fluid">
+    <div class="container">
+        <ul class="list-group">
+            @foreach (var todo in TodoItems)
+            {
+                <li class="list-group-item">
+                    <Todo CurrentTodo="todo" CurrentTodoUpdate="TodoItemUpdate" />
+                </li>
+            }
+        </ul>
+    </div>
+
+    <hr />
+    <div class="form-group row">
+        <input class="form-control col-sm-10" placeholder="Input title of new task ..." @bind="@NewTodo" />
+        <button class="btn btn-primary col-sm-2" @onclick="ClickAddTodo">Add</button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IList<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
+
+    [Parameter]
+    public string NewTodo { get; set; } = string.Empty;
+
+    private void ClickAddTodo()
+    {
+        if (string.IsNullOrEmpty(NewTodo)) return;
+
+        TodoItems.Add(new TodoItem(NewTodo));
+        NewTodo = string.Empty;
+    }
+
+    private void TodoItemUpdate(TodoItem todo)
+    {
+        StateHasChanged();
+    }
+}

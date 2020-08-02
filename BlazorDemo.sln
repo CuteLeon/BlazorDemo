@@ -24,6 +24,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestCase", "TestCase", "{23
 		TestCase\CovidCounter.postman_collection.json = TestCase\CovidCounter.postman_collection.json
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MSDNDemo", "MSDNDemo", "{70F12719-D24E-4455-AAA0-B2B6E8F93EF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TODO_WASM", "TODO_WASM\TODO_WASM.csproj", "{79373867-3801-4AD1-AF87-F562ECF7C0E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +50,10 @@ Global
 		{89F03514-056E-4008-9496-B393F0677A7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{89F03514-056E-4008-9496-B393F0677A7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{89F03514-056E-4008-9496-B393F0677A7F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79373867-3801-4AD1-AF87-F562ECF7C0E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79373867-3801-4AD1-AF87-F562ECF7C0E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79373867-3801-4AD1-AF87-F562ECF7C0E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79373867-3801-4AD1-AF87-F562ECF7C0E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +62,7 @@ Global
 		{4EB00F0D-EE7F-410D-BD8E-EEA33F04CF5E} = {8E136A4D-63CE-4F3E-9ACD-901B477027B4}
 		{A62C5A33-CF18-4085-ABB1-25C3AD006487} = {8E136A4D-63CE-4F3E-9ACD-901B477027B4}
 		{89F03514-056E-4008-9496-B393F0677A7F} = {8E136A4D-63CE-4F3E-9ACD-901B477027B4}
+		{79373867-3801-4AD1-AF87-F562ECF7C0E9} = {70F12719-D24E-4455-AAA0-B2B6E8F93EF0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD9DAEE8-BB75-4CB2-8F50-E074F4C51304}
