@@ -38,8 +38,17 @@ namespace Covid.Client.Services
 
         public async Task<bool> PublishCounterAsync(AreaCounter areaCounter)
         {
-            var result = true;
-            return result;
+            this.Logger.LogInformation($"{nameof(PublishCounterAsync)}: {areaCounter.Area}=>{areaCounter.Count}");
+            try
+            {
+                var response = await HttpClient.PostAsJsonAsync(PublishCountUrl, areaCounter);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                this.Logger.LogWarning(ex, $"{nameof(PublishCounterAsync)}: Failed to get area counter.");
+                return false;
+            }
         }
     }
 }
