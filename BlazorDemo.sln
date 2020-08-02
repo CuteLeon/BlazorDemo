@@ -5,6 +5,7 @@ VisualStudioVersion = 16.0.30320.27
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{BB69FACA-65CC-4B04-9173-05CE86A90958}"
 	ProjectSection(SolutionItems) = preProject
+		Blazor-MSDN.md = Blazor-MSDN.md
 		README.md = README.md
 	EndProjectSection
 EndProject
