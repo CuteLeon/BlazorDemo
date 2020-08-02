@@ -1,5 +1,6 @@
 ﻿@page "/CovidCounter/{Area}"
 @inject NavigationManager navigationManager
+@inject IJSRuntime JSRuntime
 
 <div class="card border-@Theme mb-3 shadow" style="max-width: 18rem;">
     <div class="card-header"><a href="/CovidCounter/@Area" class="h3 text-@Theme">@Area</a></div>
@@ -34,10 +35,12 @@
         _ => "danger",
     };
 
-    private void ClickLabel()
+    private async Task ClickLabel()
     {
-        if (this.Count.HasValue) this.Count++;
-        this.Logger.LogInformation(this.Count.ToString());
+        var result = await this.JSRuntime.InvokeAsync<int>("sayHello", $"Greet from C# {nameof(IJSRuntime.InvokeAsync)}");
+        this.Count = result;
+        //if (this.Count.HasValue) this.Count++;
+        //this.Logger.LogInformation(this.Count.ToString());
     }
 
     private void DoubleClickLabel()

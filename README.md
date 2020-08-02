@@ -216,6 +216,34 @@ await this.InvokeAsync(() =>
 });
 ```
 
+### EditForm
+
+#### Input组件
+
+**InputText**
+
+​	文本输入框
+
+**InputTextArea**
+
+​	多行文本输入框
+
+**InputNumber**
+
+​	数字输入框
+
+**InputSelect**
+
+​	下拉框
+
+**InputDate**
+
+​	输入日期
+
+**InputCheckBox**
+
+​	勾选框
+
 ## 跳转导航
 
 ​	注入 NavigationManager 并以此进行跳转导航
@@ -265,30 +293,11 @@ public class Startup
 }
 ```
 
-## EditForm
+# JS交互
 
-### Input组件
+​	通过 IJSRunTime 与JavaScript交互
 
-#### InputText
+```
+await this.JSRuntime.InvokeAsync<int>("sayHello", jsonTypeArgs);
+```
 
-​	文本输入框
-
-#### InputTextArea
-
-​	多行文本输入框
-
-#### InputNumber
-
-​	数字输入框
-
-#### InputSelect
-
-​	下拉框
-
-#### InputDate
-
-​	输入日期
-
-#### InputCheckBox
-
-​	勾选框
