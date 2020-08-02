@@ -7,23 +7,52 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-    <p><strong>Area</strong></p>
-    <InputText @bind-Value="AreaCounterEntity.Area" />
-    <p><strong>Count</strong></p>
-    <InputNumber @bind-Value="AreaCounterEntity.Count" />
-    <p><strong>PublishDate</strong></p>
-    <InputDate @bind-Value="AreaCounterEntity.PublishDate" />
-    <p><strong>DataSource</strong></p>
-    <InputSelect TValue="DataSources" @bind-Value="AreaCounterEntity.DataSource">
-        @foreach (var item in Enum.GetValues(typeof(DataSources)))
-        {
-            <option value="@item">@item</option>
-        }
-    </InputSelect>
-    <p><strong>Hide</strong></p>
-    <InputCheckbox @bind-Value="AreaCounterEntity.Hide" />
-    <p><strong>Remark</strong></p>
-    <InputTextArea @bind-Value="AreaCounterEntity.Remark" />
+    <div class="form-group row">
+        <label for="@nameof(AreaCounterEntity.Area)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Area)</label>
+        <div class="col-sm-10">
+            <InputText class="form-control" @bind-Value="AreaCounterEntity.Area" />
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="@nameof(AreaCounterEntity.Count)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Count)</label>
+        <div class="col-sm-10">
+            <InputNumber class="form-control" @bind-Value="AreaCounterEntity.Count" />
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="@nameof(AreaCounterEntity.PublishDate)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.PublishDate)</label>
+        <div class="col-sm-10">
+            <InputDate class="form-control" @bind-Value="AreaCounterEntity.PublishDate" />
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="@nameof(AreaCounterEntity.DataSource)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.DataSource)</label>
+        <div class="col-sm-10">
+            <InputSelect TValue="DataSources" class="form-control" @bind-Value="AreaCounterEntity.DataSource">
+                @foreach (var item in Enum.GetValues(typeof(DataSources)))
+                {
+                    <option value="@item">@item</option>
+                }
+            </InputSelect>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="@nameof(AreaCounterEntity.Hide)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Hide)</label>
+        <div class="col-sm-10">
+            <InputCheckbox class="form-control" @bind-Value="AreaCounterEntity.Hide" />
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="@nameof(AreaCounterEntity.Remark)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Remark)</label>
+        <div class="col-sm-10">
+            <InputTextArea class="form-control" @bind-Value="AreaCounterEntity.Remark" />
+        </div>
+    </div>
 
     <hr />
     <button type="submit" class="btn btn-primary">Submit</button>
