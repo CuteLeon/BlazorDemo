@@ -216,6 +216,15 @@ await this.InvokeAsync(() =>
 });
 ```
 
+## 跳转导航
+
+​	注入 NavigationManager 并以此进行跳转导航
+
+```csharp
+@inject NavigationManager navigationManager
+navigationManager.NavigateTo($"/");
+```
+
 ## WebAssembly 与 WebAPI 项目跨域请求(CORS)问题
 
 ​	因为客户端WebAssembly和服务端WebAPI部署在独立的端口，Blazor使用HttpClient请求WebAPI时会因为CORS被WebAPI拒绝。
