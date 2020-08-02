@@ -59,7 +59,7 @@ namespace Covid.Client.Pages
             {
                 this.Logger.LogInformation($"{nameof(this.RefreshCount)}: {nameof(this.Area)}={this.Area}");
                 var areaCounter = await this.CovidCounterService.GetAreaCounterAsync(this.Area);
-                count = int.TryParse(areaCounter.Count, out int result) ? new int?(result) : null;
+                count = areaCounter.Count;
             }
             catch (Exception ex)
             {

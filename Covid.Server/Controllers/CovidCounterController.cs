@@ -26,22 +26,29 @@ namespace Covid.Server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCounterAsync(string area)
         {
-            this.Logger.LogInformation($"Get Counter: {area}");
-            var count = await Cache.GetStringAsync($"{area}.Counter");
+            try
+            {
+                this.Logger.LogInformation($"Get Counter: {area}");
+                var count = await Cache.GetStringAsync($"{area}.Counter");
 
-            if (string.IsNullOrEmpty(count))
+                if (!int.TryParse(count, out int countValue))
+                    return this.BadRequest(area);
+                else
+                    return this.Ok(new AreaCounter(area, countValue));
+            }
+            catch
+            {
                 return this.NotFound(area);
-            else
-                return this.Ok(new AreaCounter(area, count));
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> PublishCounterAsync([FromForm] AreaCounter counter)
+        public async Task<IActionResult> PublishCounterAsync(AreaCounter counter)
         {
             this.Logger.LogWarning($"Publish Counter: {counter.Area} => {counter.Count}");
             try
             {
-                await Cache.SetStringAsync($"{counter.Area}.Counter", counter.Count);
+                await Cache.SetStringAsync($"{counter.Area}.Counter", counter.Count.ToString());
                 return this.Ok();
             }
             catch (Exception ex)

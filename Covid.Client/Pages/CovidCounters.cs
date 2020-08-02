@@ -18,7 +18,7 @@ namespace Covid.Client.Pages
         {
             this.Logger.LogInformation(nameof(this.OnInitializedAsync));
 
-            this.Areas = Enumerable.Range(-5, 10).Select(number => $"C_{number}");
+            this.Areas = Enumerable.Range(-2, 12).Select(number => $"C_{number}");
             return base.OnInitializedAsync();
         }
 
