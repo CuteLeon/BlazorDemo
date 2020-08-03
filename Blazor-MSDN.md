@@ -966,3 +966,7 @@ builder.Logging.AddProvider(new CustomLoggingProvider());
 > 高级且不安全，不建议在常规组件中使用
 
 ​	Devloper可以使用C#代码手动实现 RenderTreeBUilder 逻辑。需要确保对 OpenElement 和 CloseElement 的调用正确且均衡 (使用栈数据结构维护Element即可)，仅将特性添加到正确的位置。
+
+# 组件
+
+> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/components/?view=aspnetcore-3.1
