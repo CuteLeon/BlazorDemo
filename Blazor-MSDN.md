@@ -478,3 +478,112 @@ public void Dispose()
 }
 ```
 
+# Configuation (WebAssembly)
+
+​	Blazor WebAssembly 加载以下来源的配置：
+
+- 应用设置文件（默认）：
+  - `wwwroot/appsettings.json`
+  - `wwwroot/appsettings.{ENVIRONMENT}.json`
+- 应用注册的其他 配置提供程序。 并非所有提供程序都适用于 Blazor WebAssembly 应用。 
+
+## 应用配置设置
+
+`wwwroot/appsettings.json`
+
+```json
+{
+  "message": "Hello from config!"
+}
+```
+
+​	注入 IConfiguration 以读取配置数据
+
+```html
+@page "/"
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
+<h1>Configuration example</h1>
+<p>Message: @Configuration["message"]</p>
+```
+
+## 提供程序配置
+
+`Program.Main`
+
+```c#
+using Microsoft.Extensions.Configuration.Memory;
+var vehicleData = new Dictionary<string, string>()
+{
+    { "color", "blue" },
+    { "type", "car" },
+    { "wheels:count", "3" },
+    { "wheels:brand", "Blazin" },
+    { "wheels:brand:type", "rally" },
+    { "wheels:year", "2008" },
+};
+
+var memoryConfig = new MemoryConfigurationSource { InitialData = vehicleData };
+builder.Configuration.Add(memoryConfig);
+```
+
+## HttpClient 读取静态JSON配置
+
+​	可以将其他配置写入wwwroot目录下的JSON文件中，并使用HttpClient向本地读取。
+
+`wwwroot/cars.json`
+
+```json
+{
+	"size":"tiny"
+}
+```
+
+`Program.Main`
+
+```c#
+using Microsoft.Extensions.Configuration;
+
+var httpClient = new HttpClient() { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
+builder.Services.AddScoped<HttpClient>(serviceProvider => httpClient);
+
+var stream = await new HttpClient().GetStreamAsync("carts");
+builder.Configuration.AddJsonStream(stream);
+```
+
+## 日志记录器
+
+> 添加 Microsoft.Extensions.Logging.Configuration Nuget
+
+`appsettings.json`
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  }
+}
+```
+
+`Program.Main`
+
+```C#
+using Microsoft.Extensions.Logging;
+
+builder.Logging.AddConfiguration(
+    builder.Configuration.GetSection("Logging"));
+```
+
+## HostBuilder 配置
+
+`Program.Main`
+
+```c#
+var hostname = builder.Configuration["HostName"];
+```
+
