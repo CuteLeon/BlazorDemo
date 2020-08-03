@@ -587,3 +587,167 @@ builder.Logging.AddConfiguration(
 var hostname = builder.Configuration["HostName"];
 ```
 
+# 依赖注入
+
+​	Blazor 支持依赖注入，应用可以把服务注入组件以在整个应用中使用。
+
+| 服务              | 生存期                                               | 描述                                                         |
+| :---------------- | :--------------------------------------------------- | :----------------------------------------------------------- |
+| HttpClient        | 范围内                                               | 提供用于发送 HTTP 请求以及从 URI 标识的资源接收 HTTP 响应的方法。  Blazor WebAssembly 应用中 [HttpClient](https://docs.microsoft.com/zh-cn/dotnet/api/system.net.http.httpclient) 的实例使用浏览器在后台处理 HTTP 流量。 |
+| IJSRuntime        | 单一实例 (Blazor WebAssembly) 范围内 (Blazor Server) | 表示在其中调度 JavaScript 调用的 JavaScript 运行时实例。     |
+| NavigationManager | 单一实例 (Blazor WebAssembly) 范围内 (Blazor Server) | 包含用于处理 URI 和导航状态的帮助程序。                      |
+
+## 向应用添加服务
+
+### Blazor WebAssembly
+
+```c#
+using Microsoft.Extensions.DependencyInjection;
+public class Program
+{
+    public static async Task Main(string[] args)
+    {
+        var builder = WebAssemblyHostBuilder.CreateDefault(args);
+        builder.Services.AddSingleton<IMyDependency, MyDependency>();
+        var service = host.Services.GetRequiredService<IMyDependency>();
+        
+        await builder.Build().RunAsync();
+    }
+}
+```
+
+### Blazor Server
+
+> 同 ASP.NET Core
+
+## 服务生存周期
+
+| 生存期    | 描述                                                         |
+| :-------- | :----------------------------------------------------------- |
+| Scoped    | **Blazor WebAssembly 应用当前没有 DI 范围的概念，已注册 `Scoped` 的服务的行为与 `Singleton` 服务类似**。在 Blazor Server 应用中，范围内服务注册的范围为“连接”。 因此，即使当前意图是在浏览器中运行客户端，**对于范围应限定为当前用户的服务来说，首选使用 Scoped 服务**。 |
+| Singleton | DI 创建服务的单个实例。 需要 `Singleton` 服务的所有组件都会接收同一服务的实例。 |
+| Transient | 每当组件从服务容器获取 `Transient` 服务的实例时，它都会接收该服务的新实例。 |
+
+## 在组件中请求服务
+
+​	将服务添加到服务集合后，使用 `@inject` 指令将服务注入Razor组件。
+
+```C#
+@inject IDataAccess DataRepository
+protected override async Task OnInitializedAsync()
+{
+	collection = await DataRepository.QueryAll();
+}
+```
+
+​	在基类中可以直接使用 `[Inject]` Attribute 注入服务。
+
+```c#
+public class ComponentBase : IComponent
+{
+    [Inject]
+    protected IDataAccess DataRepository { get; set; }
+}
+```
+
+​	在派生自此基类的组件中可以直接使用已经注入的服务
+
+```html
+@page "/demo"
+@inherits ComponentBase
+<h1>Demo Component</h1>
+```
+
+## 在服务中注入服务
+
+​	复杂的服务中不可使用 `[Inject]` Attribute 来注入服务，而应该使用构造函数，DI容器创建服务时会自动在其构造函数中识别所需要的其他服务并提供。
+
+```C#
+public class DataAccess : IDataAccess
+{
+	private readonly HttpClient httpClient;
+    public DataAccess(HttpClient client)
+        => httpClient = client;
+}
+```
+
+- 要求存在一个构造函数，其所需要的参数可完全通过DI实现。
+- 适用的构造函数必须是`public`
+- 必须存在一个使用构造函数，不可以出现歧义
+
+## 用于管理 DI 范围的实用工具基组件类
+
+​	在 ASP.NET Core 应用中，Scoped 服务的范围通常限定为当前请求。 请求完成后，DI 系统将处置所有 Scoped 或 Transient 服务。 **在 Blazor Server 应用中，请求范围会在客户端连接期间一直持续存在，这可能导致暂时性和范围内服务的生存期比预期要长得多。 在 Blazor WebAssembly 应用中，已注册范围内生存期的服务被视为单一实例，因此它们的生存期比典型 ASP.NET Core 应用中的范围内服务要长。**
+
+​	限制 Blazor 应用中服务生存期的一种方法是使用 OwningComponentBase 类型。 OwningComponentBase 是派生自 ComponentBase 的一种抽象类型，**它会创建与组件生存期相对应的 DI 范围**。 通过使用此范围，可使用具有 Scoped 生存期的 DI 服务，并使其生存期与组件的生存期一样长。**销毁组件时，也会处置组件的 Scoped 服务提供程序提供的服务**。 这对以下服务很有用：
+
+- 由于 Transient 生存期不适用而应在组件中重复使用的服务。
+- 由于 Singleton 生存期不适用而不得跨组件共享的服务。
+
+### OwningComponentBase
+
+​	含有 IServiceProvider 类型的 ScopedService 属性，用于获取与组件生命周期一致的服务。
+
+​	使用 [Inject] 或 @inject 注入的服务不具有和组件相同的生命周期，必须使用 ScopedService 的 GetRequiredService 或 GetService 方法获取的服务才具有。
+
+```c#
+@page "/preferences"
+@using Microsoft.Extensions.DependencyInjection
+@inherits OwningComponentBase
+
+<ul>
+    @foreach (var user in UserService.GetAll())
+    {
+        <li>@user.Name</li>
+    }
+</ul>
+
+@code {
+    private IUserService UserService { get; set; }
+    protected override void OnInitialized()
+    {
+        UserService = ScopedServices.GetRequiredService<IUserService>();
+    }
+}
+```
+
+### OwningComponentBase\<TService>
+
+​	TService 为组件需要使用的主服务的类型，组件可以自动创建出和组件具有相同生命周期的此类型的服务。
+
+​	当然，IServiceProvider 类型的 ScopedService 属性依然可用，以获取与组件生命周期一致的其它服务。
+
+```html
+@page "/users"
+@attribute [Authorize]
+@inherits OwningComponentBase<AppDbContext>
+
+<h1>Users (@Service.Users.Count())</h1>
+
+<ul>
+    @foreach (var user in Service.Users)
+    {
+        <li>@user.UserName</li>
+    }
+</ul>
+```
+
+## 使用DI的EntityFramework DbContext
+
+​	一般情况下通过DI获取的EF DbContext服务也存在生命周期比组件更长而跨应用共享，DbContext不是线程安全的且不得同时使用。
+
+### 组件内不存在并发
+
+​	直接使用 OwningComponentBase 获取Scoped的DbContext即可避免组件之间共享同一DbContext对象并发的问题。
+
+### 组件内存在并发
+
+​	如果组件内仍可能存在并发的问题，则需要把DbContext服务注册为Transient生命周期，并在每次需要时临时获取
+
+```c#
+@inject IServiceProvider ServiceProvider
+using (var context = ServiceProvider.GetRequiredService<AppDbContext>())
+{
+	return await context.Products.Select(p => p.Name).ToListAsync();
+}
+```
