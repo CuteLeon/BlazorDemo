@@ -789,3 +789,53 @@ if (builder.HostEnvironment.IsStaging());
 if (builder.HostEnvironment.IsEnvironment("Custom"));
 ```
 
+# Logging
+
+​	使用 `Program.Main` 中的 `WebAssemblyHostBuilder.Logging` 属性在 Blazor WebAssembly 应用中配置日志：
+
+```c#
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
+builder.Logging.AddProvider(new CustomLoggingProvider());
+```
+
+> 安装 Microsoft.Extensions.Logging Nuget 以使用 ILogger 的静态扩展方法
+
+```c#
+@page "/counter"
+@using Microsoft.Extensions.Logging;
+@inject ILogger<Counter> logger;
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+@code {
+    private int currentCount = 0;
+    private void IncrementCount()
+    {
+        logger.LogWarning("Someone has clicked me!");
+        currentCount++;
+    }
+}
+```
+
+### ILoggerFactory
+
+```c#
+@page "/counter"
+@using Microsoft.Extensions.Logging;
+@inject ILoggerFactory LoggerFactory
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+    private int currentCount = 0;
+    private void IncrementCount()
+    {
+        var logger = LoggerFactory.CreateLogger<Counter>();
+        logger.LogWarning("Someone has clicked me!");
+        currentCount++;
+    }
+}
+```
+
