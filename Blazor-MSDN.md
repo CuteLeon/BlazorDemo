@@ -199,4 +199,74 @@ Welcome to your new app.
 
 # 模板
 
-> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/templates?view=aspnetcore-3.1
+## Program.cs
+
+- 应用程序入口
+
+### Blazor Server
+
+- 配置ASP.NET Core主机
+
+### Blazor WebAssembly
+
+- 指定APP根组件（RootComponent）
+- 用ConfigureServices方法配置服务
+- 使用Configuration属性配置主机
+
+## Startup.cs (仅在Blazor Server)
+
+- 使用ConfigureServices方法配置服务
+- 使用Configuration属性配置请求处理管道
+
+## wwwroot/index.html (仅在BlazorWebAssembly)
+
+- HTML页面的根页面
+- 指定APP根组件的呈现位置
+- 加载 _framework/blazor.webassembly.js文件
+  - 下载.NET运行时、应用、依赖项
+  - 初始化运行时
+
+## App.razor
+
+- 应用的根组件
+- 配置客户端路由
+
+## Pages 目录
+
+- 包含可路由组件/页面，路由使用@page指令指定
+
+### _Host.cshtml (仅在 Blazor Server)
+
+- 应用的根页面
+- 指定APP根组件的呈现位置
+- 加载 _framework/blazor.server.js文件
+  - 浏览器和服务端之间建立实时SignalR连接
+  - 初始化运行时
+
+## Shared 目录
+
+- 包含共享组件
+- MainLayout
+  - 应用布局组件
+- NavMenu
+  - 实现边栏导航
+
+## _Imports.razor
+
+​	包含在应用组件中的常见Razor指令，例如@using指令
+
+## Data 目录(仅在 Blazor Server)
+
+​	数据
+
+## wwwroot 目录
+
+​	应用的Web根目录，包含公共静态资产
+
+## appsettings.json
+
+​	应用的配置设置
+
+
+
+​	
