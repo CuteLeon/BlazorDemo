@@ -751,3 +751,41 @@ using (var context = ServiceProvider.GetRequiredService<AppDbContext>())
 	return await context.Products.Select(p => p.Name).ToListAsync();
 }
 ```
+
+# 环境 (WebAssembly)
+
+> 在本地运行应用时，环境默认为开发环境。 发布应用时，环境默认为生产环境。
+
+​	对于在本地运行的独立应用，开发服务器会添加 `blazor-environment` 标头来指定开发环境。 要为其他宿主环境指定环境，请添加 `blazor-environment` 标头。
+
+​	将自定义的标头添加到已发布的`web.config`文件中
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <httpProtocol>
+      <customHeaders>
+        <add name="blazor-environment" value="Staging" />
+      </customHeaders>
+    </httpProtocol>
+  </system.webServer>
+</configuration>
+```
+
+## 获取环境
+
+```c#
+@page "/"
+@using Microsoft.AspNetCore.Components.WebAssembly.Hosting
+@inject IWebAssemblyHostEnvironment HostEnvironment
+
+<p>Environment: @HostEnvironment.Environment</p>
+
+if (builder.HostEnvironment.Environment == "Custom");
+if (builder.HostEnvironment.IsDevelopment());
+if (builder.HostEnvironment.IsProduction());
+if (builder.HostEnvironment.IsStaging());
+if (builder.HostEnvironment.IsEnvironment("Custom"));
+```
+
