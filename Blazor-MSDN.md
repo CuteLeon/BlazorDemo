@@ -267,6 +267,214 @@ Welcome to your new app.
 
 ​	应用的配置设置
 
+# 路由
+
+```html
+<Router AppAssembly="typeof(Startup).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <p>Sorry, there's nothing at this address.</p>
+    </NotFound>
+</Router>
+```
+
+## 路由模板
+
+​	Router组件可实现到具有指定的每个组件的路由，Router组件的配置在App.razor
+
+​	编译带有 `@page` 指令的 `.razor` 文件时，将为生成的类提供指定路由模板的 RouteAttribute。
+
+​	RouteView组件从Router接收RouteData以及任何所需的参数，通过指定参数使用指定组件的布局（或使用DefaultLayout指定的默认布局）呈现组件。
+
+​	可以将多个路由模板应用于同一个组件，
+
+## NotFound 自定义内容
+
+​	可以在\<Router.NotFound/>里指定未能找到匹配路由时显示的自定义内容。
+
+​	`<NotFound>` 标记的内容可以包括任意项，例如其他交互式组件。也可以为NotFound设置布局。
+
+## 从多个程序集路由到组件
+
+```html
+<Router
+    AppAssembly="typeof(Program).Assembly"
+    AdditionalAssemblies="new[] { typeof(Component1).Assembly }">
+    ...
+</Router>
+```
+
+​	使用`AdditionalAssemblies`参数为Routerr组件指定搜索可路由组件时除了`AppAssembly`以外要考虑的其他程序集。
+
+## 路由参数
+
+​	可以使用路由参数以相同名称填充相应的组件参数（不区分大小写），不支持可选参数
+
+```c#
+@page "/RouteParameter"
+@page "/RouteParameter/{text}"
+
+<h1>Blazor is @Text!</h1>
+
+@code {
+    [Parameter]
+    public string Text { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Text = Text ?? "fantastic";
+    }
+}
+```
+
+## 路由约束
+
+​	路由约束强制在路由段和组件之间进行类型匹配。
+
+```c#
+@page "/Users/{Id:int}"
+
+<h1>The user Id is @Id!</h1>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+}
+```
+
+| 约束       | 示例              | 匹配项示例                                                   |
+| :--------- | :---------------- | :----------------------------------------------------------- |
+| `bool`     | `{active:bool}`   | `true`，`FALSE`                                              |
+| `datetime` | `{dob:datetime}`  | `2016-12-31`，`2016-12-31 7:32pm`                            |
+| `decimal`  | `{price:decimal}` | `49.99`，`-1,000.01`                                         |
+| `double`   | `{weight:double}` | `1.234`，`-1,001.01e8`                                       |
+| `float`    | `{weight:float}`  | `1.234`，`-1,001.01e8`                                       |
+| `guid`     | `{id:guid}`       | `CD2C1638-1638-72D5-1638-DEADBEEF1638`，`{CD2C1638-1638-72D5-1638-DEADBEEF1638}` |
+| `int`      | `{id:int}`        | `123456789`，`-123456789`                                    |
+| `long`     | `{ticks:long}`    | `123456789`，`-123456789`                                    |
+
+## 使用包含点的路由
+
+​	包含点 (`.`) 的请求 URL 与默认路由不匹配，因为 URL 似乎在请求文件。 Blazor 应用针对不存在的静态文件返回“404 - 找不到”响应。 若要使用包含点的路由，请使用以下路由模板配置：
+
+> Razor组件(.razor)不支持Catch-all语法(*/**)
+
+```
+@page "/{**path}"
+```
+
+- 双星号 catch-all语法，用于跨越文件夹边界捕捉路径，而无需编码正斜杠`/`
+- path路由参数名称
+
+## NavLink 组件
+
+​	创建导航链接时，请使用 NavLink 组件代替 HTML 超链接元素 (`<a>`)。其组件的行为方式类似于 `<a>` 元素，但它根据其 `href` 是否与当前 URL 匹配来切换 `active` CSS 类。 `active` 类可帮助用户了解所显示导航链接中的哪个页面是活动页面。 也可以选择将 CSS 类名分配到 NavLink.ActiveClass，以便在当前路由与 `href` 匹配时将自定义 CSS 类应用到呈现的链接。
+
+### Match
+
+​	NavLink 组件由两种 Match 可用：
+
+#### NavLinkMatch.All
+
+​	NavLink在与当前整个 URL 匹配的情况下处于活动状态。
+
+#### NavLinkMatch.Prefix
+
+​	NavLink在与当前 URL 的任何前缀匹配的情况下处于活动状态。
+
+### target
+
+​	NavLink组件可以接收 target 属性
+
+```
+<NavLink href="my-page" target="_blank">My page</NavLink>
+```
+
+| target       | 行为                                                         |
+| ------------ | ------------------------------------------------------------ |
+| _blank       | 浏览器总在一个新打开、未命名的窗口中载入目标文档             |
+| _self (默认) | 目标文档载入并显示在相同的框架或者窗口中作为源文档           |
+| _parent      | 这个目标使得文档载入父窗口或者包含来超链接引用的框架的框架集 |
+| _top         | 这个目标使得文档载入包含这个超链接的窗口，用 _top 目标将会清除所有被包含的框架并将文档载入整个浏览器窗口 |
+
+## URI和导航状态帮助程序
+
+​	应使用 NavigationManager 与 URI 和导航配合使用，具体事件和方法如下：
+
+| 成员               | 描述                                                         |
+| :----------------- | :----------------------------------------------------------- |
+| Uri                | 获取当前绝对 URI。                                           |
+| BaseUri            | 获取可在相对 URI 路径之前添加用于生成绝对 URI 的基 URI（带有尾部反斜杠）。 通常，BaseUri 对应于 `wwwroot/index.html` (Blazor WebAssembly) 或 `Pages/_Host.cshtml` (Blazor Server) 中文档的 `<base>` 元素上的 `href` 属性。 |
+| NavigateTo         | 导航到指定 URI。 如果 `forceLoad` 为 `true`，则：客户端路由会被绕过。无论 URI 是否通常由客户端路由器处理，浏览器都必须从服务器加载新页面。 |
+| LocationChanged    | 导航位置更改时触发的事件。                                   |
+| ToAbsoluteUri      | 将相对 URI 转换为绝对 URI。                                  |
+| ToBaseRelativePath | 给定基 URI，将绝对 URI 转换为相对于基 URI 前缀的 URI。       |
+
+```c#
+@page "/navigate"
+@inject NavigationManager NavigationManager
+
+<button class="btn btn-primary" @onclick="NavigateToCounterComponent">Navigate to the Counter component</button>
+
+@code {
+    private void NavigateToCounterComponent()
+        => NavigationManager.NavigateTo("counter");
+}
+```
+
+​	以下组件通过订阅 NavigationManager.LocationChanged 来处理位置改变事件。 在框架调用 `Dispose` 时，解除挂接 `HandleLocationChanged` 方法。 解除挂接该方法可允许组件进行垃圾回收。
+
+```c#
+@implements IDisposable
+@inject NavigationManager NavigationManager
 
 
-​	
+protected override void OnInitialized()
+    => NavigationManager.LocationChanged += HandleLocationChanged;
+
+private void HandleLocationChanged(object sender, LocationChangedEventArgs e)
+{
+}
+
+public void Dispose()
+    => NavigationManager.LocationChanged -= HandleLocationChanged;
+
+```
+
+​	LocationChangedEventArgs
+
+- Location: 新位置的URL
+- IsNavigationIntercepted
+  - True: Blazor 拦截了浏览器中的导航
+  - False: NavigationManager.NavigateTo 导致了导航发生
+
+## QueryString和分析查询字符串的参数
+
+> 安装 Microsoft.AspNetCore.WebUtilities Nuget
+>
+> 使用 QueryHelper.ParseQuery 分析字符串并取值
+
+```c#
+@page "/"
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
+
+<p>Value: @queryValue</p>
+
+@code {
+    private string queryValue = "Not set";
+
+    protected override void OnInitialized()
+    {
+        var query = new Uri(NavigationManager.Uri).Query;
+
+        if (QueryHelpers.ParseQuery(query).TryGetValue("{KEY}", out var value))
+        {
+            queryValue = value;
+        }
+    }
+}
+```
+
