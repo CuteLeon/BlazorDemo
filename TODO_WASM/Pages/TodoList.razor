@@ -1,14 +1,14 @@
 ﻿@page "/TodoList"
 
-<h1>To Do (@(TodoItems.Count(todo=>!todo.Done)) / @(TodoItems.Count()))</h1>
+<div class="container">
+    <h1>To Do (@(TodoItems.Count(todo=>!todo.Done)) / @(TodoItems.Count()))</h1>
 
-<div class="container-fluid">
-    <div class="container">
+    <div class="container-fluid">
         <ul class="list-group">
             @foreach (var todo in TodoItems)
             {
                 <li class="list-group-item">
-                    <Todo CurrentTodo="todo" CurrentTodoUpdate="TodoItemUpdate" />
+                    <Todo CurrentTodo="todo" CurrentTodoUpdate="TodoItemUpdate" CurrentTodoDelete="TodoItemDelete"/>
                 </li>
             }
         </ul>
@@ -23,7 +23,7 @@
 
 @code {
     [Parameter]
-    public IList<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
+    public ISet<TodoItem> TodoItems { get; set; } = new HashSet<TodoItem>();
 
     [Parameter]
     public string NewTodo { get; set; } = string.Empty;
@@ -39,5 +39,10 @@
     private void TodoItemUpdate(TodoItem todo)
     {
         StateHasChanged();
+    }
+
+    private void TodoItemDelete(TodoItem todo)
+    {
+        TodoItems.Remove(todo);
     }
 }

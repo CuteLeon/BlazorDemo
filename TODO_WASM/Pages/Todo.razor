@@ -1,6 +1,7 @@
 ﻿<div class="form-group row text-@(CurrentTodo.Done?"secondary":"primary")" style="margin:unset">
-    <input type="checkbox" id="checkboxDone" class="form-control-sm col-sm-1" value="@CurrentTodo.Done" @onchange="OnCheckboxChange" />
-    <p class="col-sm-11 align-middle h3" style="margin:unset">@CurrentTodo.Title</p>
+    <input type="checkbox" id="checkboxDone" class="form-control-sm col-sm-1" value="@CurrentTodo.Done" @onchange="OnDoneChange" />
+    <p class="col-sm-10 align-middle h3" style="margin:unset">@CurrentTodo.Title</p>
+    <button class="btn btn-sm btn-outline-danger col-sm-1" @onclick="OnDeleteClick">Delete</button>
 </div>
 
 @code {
@@ -10,11 +11,20 @@
     [Parameter]
     public EventCallback<TodoItem> CurrentTodoUpdate { get; set; }
 
-    private async Task OnCheckboxChange(ChangeEventArgs args)
+    [Parameter]
+    public EventCallback<TodoItem> CurrentTodoDelete { get; set; }
+
+    private async Task OnDoneChange(ChangeEventArgs args)
     {
         CurrentTodo.Done = (bool)args.Value;
 
         if (!CurrentTodoUpdate.HasDelegate) return;
         await CurrentTodoUpdate.InvokeAsync(this.CurrentTodo);
+    }
+
+    private async Task OnDeleteClick(MouseEventArgs args)
+    {
+        if (!CurrentTodoDelete.HasDelegate) return;
+        await CurrentTodoDelete.InvokeAsync(this.CurrentTodo);
     }
 }
