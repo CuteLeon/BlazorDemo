@@ -10,16 +10,22 @@
     <div class="card-columns">
         @foreach (var area in Areas)
         {
-            <CovidCounter Area="@area" />
+            <CovidCounter Area="@area" @ref="CovidCounterList.Add((CovidCounter)__value);//" />
         }
     </div>
 </div>
 
 @code {
-    [Parameter]
     public IEnumerable<string> Areas { get; set; }
 
-    private void RefreshAreaCounters()
+    public IList<CovidCounter> CovidCounterList { get; set; } = new List<CovidCounter>();
+
+    private async Task RefreshAreaCounters()
     {
+        this.Logger.LogInformation($"{nameof(RefreshAreaCounters)} : 手动刷新...");
+        foreach (var covidCounter in CovidCounterList)
+        {
+            await covidCounter.RefreshCount();
+        }
     }
 }
