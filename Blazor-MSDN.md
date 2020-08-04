@@ -969,4 +969,433 @@ builder.Logging.AddProvider(new CustomLoggingProvider());
 
 # 组件
 
-> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/components/?view=aspnetcore-3.1
+​	Blazor是基于组件构建的。组件包含用户界面、数据、事件、逻辑等，十分灵活，且可以嵌套、复用、共享。
+
+## 名称
+
+​	组件名称必须首字母大写，否则无效
+
+## 路由
+
+​	`@page` 指令为组件生成路由模板的 RouteAttribute
+
+## 标记
+
+​	编译时，HTML标记和C#呈现逻辑被转换为组件类。生成的类的名称与文件名匹配。
+
+​	组件类的成员在 `@code` 块中定义，可以有多个。
+
+​	可以使用 @ 开头的C#表达式将组件成员作为组件的呈现逻辑的一部分。
+
+```c#
+<h1 style="font-style:@headingFontStyle">@headingText</h1>
+@code {
+    private string headingFontStyle = "italic";
+    private string headingText = "Put on your new Blazor!";
+}
+```
+
+​	呈现组件后，组件会为响应事件而重新生成呈现树，然后Blazor将比较两个呈现树并对浏览器文档对象模型DOM应用任何修改。
+
+## 命名空间
+
+​	通常，组件的命名空间是从应用的跟命名空间和该组件在应用内的位置派生而来的。
+
+​	使用指令 `@namespace` 指定组件的命名空间。
+
+## 分部类支持
+
+​	Razor组件会自动编译成分部类，也可以创建同名的C#类，并通过添加 `partial` 将其合并为分部类。
+
+## 指定基类
+
+​	使用 `@inherits` 指令指定组件的基类。
+
+## 使用组件
+
+​	通过HTML元素语法声明组件，标签的名称是组件的类型。
+
+## 参数
+
+### 路由参数
+
+​	组件可以接受来自`@page`指令所提供的路由模板的路由参数。
+
+​	不支持可选参数，可以使用多个`@page`指令配置多个包含不同参数的路由。
+
+​	不支持 Catch-all (*/**) 参数语法。
+
+### 组件参数
+
+​	组件的参数是组件类中包含 `[Parameter]` 特性的公共属性定义的。使用这些属性在标记中为组件指定参数。
+
+​	子内容和事件也以这种方式提供。
+
+```c#
+<div class="panel panel-default">
+    <div class="panel-heading">@Title</div>
+    <div class="panel-body">@ChildContent</div>
+    <button class="btn btn-primary" @onclick="OnClickCallback">
+        Trigger a Parent component method
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnClickCallback { get; set; }
+}
+```
+
+```html
+<ChildComponent Title="Panel Title from Parent" OnClickCallback="@ShowMessage">
+    Content of the child component is supplied by the parent component.
+</ChildComponent>
+```
+
+## 子内容
+
+​	组件可以在组件标记之间提供另一个组件的内容。属性名称和类型是固定的。
+
+```c#
+[Parameter]
+public RenderFragment ChildContent { get; set; }
+```
+
+## 属性展开和任意参数
+
+​	除了组件声明的参数以外，还可以捕获和呈现其他属性。其他属性可以在字典中捕获，并通过 `@attributes` 指令呈现。
+
+```c#
+<input id="useIndividualParams" placeholder="@Placeholder" />
+<input id="useAttributesDict" @attributes="InputAttributes" />
+
+@code {
+    [Parameter]
+    public string Placeholder { get; set; } = "Input placeholder text 1";
+
+    [Parameter]
+    public Dictionary<string, object> InputAttributes { get; set; } =
+        new Dictionary<string, object>()
+        {
+            { "placeholder", "Input placeholder text 2" },
+        };
+}
+```
+
+​	参数的类型必须使用字符串键实现`IEnumerable<KeyValuePair<string, object>>` 或 `IReadOnlyDictionary<string, object>`。
+
+​	要接受任意特性，需要使用 `Parameter` 特性定义组件参数，并将 `CaptureUnmatchedValue` 属性设置为 true
+
+```c#
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> InputAttributes { get; set; }
+}
+```
+
+## 捕捉对组件的引用
+
+​	可以使用 `@ref` 指令引用组件的实例到同类型的字段，以便于向实例发出命令。
+
+​	仅在呈现组件后填充成员，可以在 `OnAfterRenderAsync` 或 `OnAfterRender` 方法后操作组件引用。
+
+```c#
+<MyLoginDialog @ref="loginDialog" ... />
+    
+@code {
+    private MyLoginDialog loginDialog;
+    
+    private void OnSomething()
+    {
+        loginDialog.Show();
+    }
+}
+```
+
+### 捕捉循环中的组件
+
+​	需要一点骚操作。
+
+```c#
+@for (int i = 0; i < 10; i++)
+{
+    <MyComponent @ref="component"/>
+}
+
+@code
+{
+    MyComponent component { set => components.Add(value); }
+
+    List<MyComponent> components = new List<MyComponent>();
+}
+```
+
+​	或者
+
+```c#
+@for (int i = 0; i < 10; i++)
+{
+    <MyComponent @ref="components.Add((MyComponent)__value);//" />
+}
+
+@code
+{
+    List<MyComponent> components = new List<MyComponent>();
+}
+```
+
+​	引用组件不是JavaScript互操作功能，组件引用不会传递给JS，而只可以在.Net代码中使用。
+
+## 同步上下文
+
+​	Blazor 使用同步上下文(SynchronizationContext)强制执行单个逻辑线程。组件的生命周期方法和事件回调都在此同步上下文上执行。
+
+## 避免阻止线程的调用
+
+​	通常，不要调用一下方法，以免阻止线程直到Task完成。
+
+## 在外部调用组件方法以更新状态
+
+​	如果组件需要根据外部事件进行更新，使用 InvokeAsync() 和 StateHasChanged() 方法更新UI。
+
+```c#
+@page "/"
+@inject NotifierService Notifier
+@implements IDisposable
+
+<p>Last update: @lastNotification.key = @lastNotification.value</p>
+
+@code {
+    private (string key, int value) lastNotification;
+
+    protected override void OnInitialized()
+        => Notifier.Notify += OnNotify;
+
+    public async Task OnNotify(string key, int value)
+        => await InvokeAsync(() =>
+        {
+            lastNotification = (key, value);
+            StateHasChanged();
+        });
+
+    public void Dispose()
+        => Notifier.Notify -= OnNotify;
+}
+```
+
+## @key 控制是否保留元素和组件
+
+​	呈现元素或组件的列表发生更改时，Blazor需要先决定哪些可以保留，以及模型对象如何映射到元素或组件。通常，这个过程是自动的，也可以通过`@key`控制该映射过程，使比较算法基于key的值保留元素或组件。
+
+```
+@foreach (var person in People)
+{
+    <DetailsEditor @key="people" Details="@person.Details" />
+}
+
+@code {
+    [Parameter]
+    public IEnumerable<Person> People { get; set; }
+}
+```
+
+​	每个容器元素或组件而言，键是本地的，不会在整个文档中全局比较key。
+
+### 何时使用@key
+
+​	通常，每当列表呈现且存在合适的值来定义key时，最好使用key。还可以使用key来防止Blazor在对象发生变化时保留元素或组件子树。
+
+```html
+<div @key="currentPerson">
+    ... content that depends on currentPerson ...
+</div>
+```
+
+​	Blazor可以在currentPeople变化时强制放弃整个\<div>及其子组件，并生成新的元素。对于不保留UI状态的场景很有用。
+
+### 何时不适用@key
+
+​	使用key比较也会产生性能成本，因此应该在key有益的场景下使用。
+
+### @key使用哪些值
+
+​	key的值不允许冲突，否则Blazor将会引发异常。
+
+- 模型对象实例，可以确保基于对象引用相等性的保留。
+- 唯一的主键标识符
+
+## 请勿创建会写入其自己的组参数属性的组件
+
+​	下述情况会重写参数：
+
+- 子组件以RenderFragment呈现
+- 调用父组件的StateHasChanged方法
+
+​	反例：
+
+```C#
+<div @onclick="@Toggle" class="card text-white bg-success mb-3">
+    <div class="card-body">
+        <div class="panel-heading">
+            <h2>Toggle (<code>Expanded</code> = @Expanded)</h2>
+        </div>
+
+        @if (Expanded)
+        {
+            <div class="card-text">
+                @ChildContent
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool Expanded { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    private void Toggle()
+    {
+        Expanded = !Expanded;
+    }
+}
+```
+
+```html
+@page "/expander"
+
+<Expander Expanded="true">
+    Expander 1 content
+</Expander>
+
+<Expander Expanded="true" />
+
+<button @onclick="StateHasChanged">
+    Call StateHasChanged
+</button>
+```
+
+​	在父组件StateHasChanged()之后，第一个Expander的Expanded属性均会被重写为true，而第二个不会，因为其没有子内容。
+
+​	正确的做法是使用私有字段来保留状态：
+
+- 使用公开属性接受父组件传递的参数
+- 将组件参数值在OnInitialized事件中分配给私有字段
+- 使用私有字段维持内部状态
+
+```c#
+<div @onclick="@Toggle" class="card text-white bg-success mb-3">
+    <div class="card-body">
+        <div class="panel-heading">
+            <h2>Toggle (<code>expanded</code> = @expanded)</h2>
+        </div>
+
+        @if (expanded)
+        {
+            <div class="card-text">
+                @ChildContent
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private bool expanded;
+
+    [Parameter]
+    public bool Expanded { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        expanded = Expanded;
+    }
+
+    private void Toggle()
+    {
+        expanded = !expanded;
+    }
+}
+```
+
+## 应用属性
+
+​	可以通过`@attribute`指令在Razor组件中应用属性。
+
+```
+@attribute [Authorize]
+```
+
+## 条件HTML元素属性
+
+​	HTML元素属性基于.Net 值有条件的呈现。如果为false或null则布城线属性，否则为true，以最小化呈现属性。
+
+```c#
+<input type="checkbox" checked="@IsCompleted" />
+
+@code {
+    [Parameter]
+    public bool IsCompleted { get; set; }
+}
+```
+
+​	有些属性无法使用bool类型，请改成string类型。
+
+## 原始HTML
+
+​	如果需要将文本显示为HTML，应该将文本包装在`MarkupString`中。
+
+> 从任何不受信任的源构造原始HTML存在风险，应避免！
+
+```c#
+@((MarkupString)myMarkup)
+
+@code {
+    private string myMarkup = 
+        "<p class='markup'>This is a <em>markup string</em>.</p>";
+}
+```
+
+## Razor模板
+
+​	使用 `RenderFragment` 和 `RenderFragment\<TValue>` 在组件中直接呈现目标那，也可以将呈现片段作为参数传递给模板化组件。
+
+```c#
+@timeTemplate
+
+@petTemplate(new Pet { Name = "Rex" })
+
+@code {
+    private RenderFragment timeTemplate = @<p>The time is @DateTime.Now.</p>;
+    private RenderFragment<Pet> petTemplate = (pet) => @<p>Pet: @pet.Name</p>;
+
+    private class Pet
+    {
+        public string Name { get; set; }
+    }
+}
+```
+
+## 静态资产
+
+​	静态资产放在`wwwroot`下，使用基相对路径`/`即可引用。
+
+```html
+<img alt="Company logo" src="/images/logo.png" />
+```
+
+# 内置组件
+
+## 身份验证
+
+> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/security/webassembly/?view=aspnetcore-3.1#authentication-component
