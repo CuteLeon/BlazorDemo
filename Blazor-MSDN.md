@@ -1398,4 +1398,461 @@ public RenderFragment ChildContent { get; set; }
 
 ## 身份验证
 
-> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/security/webassembly/?view=aspnetcore-3.1#authentication-component
+​	Blazor WebAssembly 支持通过 `Microsoft.AspNetCore.Components.WebAssembly.Authentication` 库使用 `OIDC(Open ID Connect)` 对应用进行身份验证和授权。 该库提供一组基元，可用于对 ASP.NET Core 后端进行无缝身份验证。
+
+​	Balzor WebAssembly 中的身份验证支持建立在 `oidc-client.js` 库的基础上，用于处理基础身份验证协议。Blazor Web Assembly的工程设计决定，OAuth和OIDC是在BlazorWebAssembly应用中进行身份验证的最佳选择。
+
+​	基于以下原因选择以 `JSONWebToken (JWT)` 而不是 cookie 为基础的身份验证。
+
+- 使用基于令牌的协议可以减小攻击面，因为并非所有请求中都会发送令牌。
+- 服务器终结点不要求针对跨站点请求伪造 (CSRF)进行保护，因为会显式发送令牌。
+- 令牌的权限比 cookie 窄。 例如，令牌不能用于管理用户帐户或更改用户密码，除非显式实现了此类功能。
+- 令牌的生命周期更短（默认为一小时），这限制了攻击时间窗口。 还可随时撤销令牌。
+- 自包含 JWT 向客户端和服务器提供身份验证进程保证。
+- OAuth 和 OIDC 的令牌不依赖于用户代理行为正确以确保应用安全。
+- 基于令牌的协议允许用同一组安全特征对托管和独立应用进行验证和授权。
+
+### 使用 OIDC 的身份验证进程
+
+​	`Microsoft.AspNetCore.Components.WebAssembly.Authentication` 库提供几个基元，用于使用 OIDC 实现身份验证和授权。
+
+​	从广义上说来，身份验证的原理如下：
+
+- 当匿名用户选择登录按钮或请求应用了 `[Authorize\]` 特性的页面时，会将其重定向到应用的登录页 (`/authentication/login`)。
+- 在登录页上，身份验证库准备重定向到授权终结点。
+
+​	授权终结点在 Blazor WebAssembly 应用之外，可以托管在单独的原点上。该终结点负责确定用户是否通过身份验证，并发送一个或更多令牌作为响应。
+
+ 
+
+身份验证库提供登录回叫以接收身份验证响应。
+
+- 如果用户未通过身份验证，则会被重定向到底层身份验证系统，通常是 ASP.NET Core Identity。
+- 如果用户已通过身份验证，则授权终结点会生成相应的令牌，并将浏览器重定向回登录回叫终结点 (`/authentication/login-callback`)。
+- 当 Blazor WebAssembly 应用加载登录回叫终结点 (`/authentication/login-callback`) 时，就处理了身份验证响应。
+  - 如果身份验证进程成功完成，则用户通过身份验证，可以选择返回该用户请求的原受保护 URL。
+  - 如果身份验证进程由于任何原因而失败，会将用户导向登录失败页 (`/authentication/login-failed`)，并显示错误。
+
+### Authentication 组件
+
+​	`Authentication` 组件 (`Pages/Authentication.razor`) 会处理远程身份验证操作并允许应用：
+
+- 为身份验证状态配置应用路由。
+- 为身份验证状态设置 UI 内容。
+- 管理身份验证状态。
+
+​	身份验证操作（例如注册用户或使用户登录）传递到 Blazor 框架的 [RemoteAuthenticatorViewCore](https://docs.microsoft.com/zh-cn/dotnet/api/microsoft.aspnetcore.components.webassembly.authentication.remoteauthenticatorviewcore-1) 组件，该组件会保留和控制整个身份验证操作中的状态。
+
+### 授权
+
+​	在 Blazor WebAssembly 应用中，可绕过授权检查，因为用户可修改所有客户端代码。 所有客户端应用程序技术都是如此，其中包括 JavaScript SPA 框架或任何操作系统的本机应用程序。
+
+​	**始终对客户端应用程序访问的任何 API 终结点内的服务器执行授权检查。**
+
+### 需要对整个应用授权
+
+​	使用以下方法之一将 `[Authorize]` 特性应用到每个Razor组件上：
+
+- 在 `_Imports.razor` 文件中使用 `@attribute` 指令
+
+```
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+```
+
+- 向 Pages 目录下每个Razor组件添加属性
+
+### 刷新令牌
+
+​	在 Blazor WebAssembly 应用中，无法在客户端保护刷新令牌。 因此，不得将刷新令牌发送到应用以供直接使用。在托管的 Blazor WebAssembly 解决方案中，服务器端应用可以维护和使用刷新令牌来访问第三方 API。
+
+### AuthorizeView 组件
+
+​	AuthorizeView 组件可以根据用户是否有权查看来选择性显示UI。如果需要为用户显示数据，而不需要在过程逻辑中使用用户标识，此方法很有用。
+
+​	此组件公开一个 `AuthenticationState`类型的`context`变量，可以使用变量来访问有关登录用户的信息。并通过 `<Authorized>` 和 `<NotAuthorized>` 显示登录前后的内容。
+
+```html
+<AuthorizeView>
+    <h1>Hello, @context.User.Identity.Name!</h1>
+    <p>You can only see this content if you're authenticated.</p>
+</AuthorizeView>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Hello, @context.User.Identity.Name!</h1>
+        <p>You can only see this content if you're authenticated.</p>
+    </Authorized>
+    <NotAuthorized>
+        <h1>Authentication Failure!</h1>
+        <p>You're not signed in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+```
+
+​	可以在导航组件使用此组件用于区分显示导航，但是仅仅隐藏了导航项目，并不能阻止用户尝试访问此地址。
+
+​	如果未指定授权条件，则此组件使用默认策略，登录用户视为授权，未登录用户视为未授权。
+
+#### 基于角色和基于策略的授权
+
+​	使用 `Roles` 参数指定基于角色的授权。
+
+```html
+<AuthorizeView Roles="admin, superuser">
+    <p>You can only see this if you're an admin or superuser.</p>
+</AuthorizeView>
+```
+
+​	使用 `Policy` 参数指定基于策略的授权。
+
+```html
+<AuthorizeView Policy="content-editor">
+    <p>You can only see this if you satisfy the "content-editor" policy.</p>
+</AuthorizeView>
+```
+
+#### 异步身份验证期间显示的内容
+
+​	通过 Blazor，可通过异步方式确定身份验证状态。正在进行身份验证时，AuthorizeView 默认情况下不显示任何内容。 若要在进行身份验证期间显示内容，请使用 `<Authorizing>` 标记：
+
+```html
+<AuthorizeView>
+    <Authorized>
+        <h1>Hello, @context.User.Identity.Name!</h1>
+        <p>You can only see this content if you're authenticated.</p>
+    </Authorized>
+    <Authorizing>
+        <h1>Authentication in progress</h1>
+        <p>You can only see this content while authentication is in progress.</p>
+    </Authorizing>
+</AuthorizeView>
+```
+
+### Authorize 特性
+
+​	`[Authorize]` 特性可以在Razor组件中使用。
+
+​	只在通过 Blazor 路由器到达的 `@page` 组件上使用 `[Authorize\]`。授权仅作为路由的一个方面执行，而不是作为页面中呈现的子组件来执行。 若要授权在页面中显示特定部分，请改用 AuthorizeView。
+
+```
+@page "/"
+@attribute [Authorize]
+
+You can only see this if you're signed in.
+```
+
+​	基于角色或基于策略的授权：
+
+```c#
+@page "/"
+@attribute [Authorize(Roles = "admin, superuser")]
+
+<p>You can only see this if you're in the 'admin' or 'superuser' role.</p>
+```
+
+### 使用路由器组件自定义未授权内容
+
+​	Router 组件与 AuthorizeRouteView 组件搭配使用时，可允许应用程序在以下情况下指定自定义内容：
+
+- 找不到内容。
+- 用户不符合应用于组件的 `[Authorize]` 条件。
+- 正在进行异步身份验证。
+
+### 有关身份验证状态更改的通知
+
+​	如果应用确定基础身份验证状态数据已更改（例如，由于用户已注销或其他用户已更改其角色），则自定义 `AuthenticationStateProvider` 可以选择对 `AuthenticationStateProvider` 基类调用 `NotifyAuthenticationStateChanged` 方法。 这会通知身份验证状态数据使用者使用新数据重新呈现。
+
+### 过程逻辑
+
+​	如果需要应用在过程逻辑中检查授权规则，请使用类型为 `Task<AuthenticationState>` 的级联参数来获取用户的 ClaimsPrincipal。 `Task<AuthenticationState>` 可以与其他服务结合使用来评估策略。
+
+```c#
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAuthorizationService AuthorizationService
+
+<button @onclick="@DoSomething">Do something important</button>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    private async Task DoSomething()
+    {
+        var user = (await authenticationStateTask).User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            // Perform an action only available to authenticated (signed-in) users.
+        }
+
+        if (user.IsInRole("admin"))
+        {
+            // Perform an action only available to users in the 'admin' role.
+        }
+
+        if ((await AuthorizationService.AuthorizeAsync(user, "content-editor")).Succeeded)
+        {
+            // Perform an action only available to users satisfying the 'content-editor' policy.
+        }
+    }
+}
+```
+
+### 排查错误
+
+​	常见错误：
+
+- **授权需要 `Task<AuthenticationState>` 类型的级联参数。请考虑使用 `CascadingAuthenticationState` 来提供此参数。**
+- **对于 `authenticationStateTask`，收到了 `null` 值**
+
+## 内置表单组件
+
+​	Blazor 支持数据注释特性定义数据验证逻辑。
+
+```c#
+using System.ComponentModel.DataAnnotations;
+
+public class ExampleModel
+{
+    [Required]
+    [StringLength(10, ErrorMessage = "Name is too long.")]
+    public string Name { get; set; }
+}
+```
+
+​	表单使用`<EditForm>`组件定义。
+
+```html
+<EditForm Model="@exampleModel" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <InputText id="name" @bind-Value="exampleModel.Name" />
+	<ValidationMessage For="()=>exampleModel.Name" />
+    
+    <button type="submit">Submit</button>
+</EditForm>
+
+@code {
+    private ExampleModel exampleModel = new ExampleModel();
+
+    private void HandleValidSubmit()
+    {
+        Console.WriteLine("OnValidSubmit");
+    }
+}
+```
+
+-  `<EditForm>` 元素的 `Model` 指向需要表单验证的对象。
+- `InputText` 组件的 `@bind-Value` 进行以下绑定：
+  - 将模型属性绑定到 InputText 组件的 `Value` 属性。
+  - 将更改事件委托绑定到 InputText 组件的 `ValueChanged` 属性。
+- `DataAnnotationsValidator` 组件使用数据注释附加验证支持。
+-  `ValidationSummary` 组件汇总验证消息。
+-  `ValidationMessage` 组件显示单个属性的验证消息。
+   - 在 `app.css` 或 `site.css` 中控制验证消息的样式：`validation-message`
+- 窗体成功提交（通过验证）时触发 `OnValidSubmit` 指向的方法。
+
+### 可用的表单组件
+
+| 输入组件      | 呈现为…                   |
+| :------------ | :------------------------ |
+| InputText     | `<input>`                 |
+| InputTextArea | `<textarea>`              |
+| InputSelect   | `<select>`                |
+| InputNumber   | `<input type="number">`   |
+| InputCheckbox | `<input type="checkbox">` |
+| InputDate     | `<input type="date">`     |
+
+### 一个完善的创建/编辑两用表单
+
+```C#
+@* 使用两个路由，分别匹配创建和编辑的功能 *@
+@page "/PublishCounter"
+@page "/PublishCounter/{Area}"
+
+<h3>PublishCounter</h3>
+
+@* 判断表单是否提交并显示提交结果 *@
+@if (Result.Status.HasValue)
+{
+    <div class="alert alert-@(Result.Status.Value?"success":"danger")">
+        @Result.Message
+    </div>
+}
+else
+{
+    @* 向表单绑定数据实例、验证方法 *@
+    <EditForm Model="@AreaCounterEntity" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+        @* 数据验证器和验证消息组件 *@
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @* 标签和表单控件组合 *@
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.Area)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Area)</label>
+            <div class="col-sm-10">
+                <InputText class="form-control" @bind-Value="AreaCounterEntity.Area" />
+                @* 显示针对属性的验证信息 *@
+                <ValidationMessage For="()=>AreaCounterEntity.Area" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.Count)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Count)</label>
+            <div class="col-sm-10">
+                <InputNumber class="form-control" @bind-Value="AreaCounterEntity.Count" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.PublishDate)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.PublishDate)</label>
+            <div class="col-sm-10">
+                <InputDate class="form-control" @bind-Value="AreaCounterEntity.PublishDate" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.DataSource)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.DataSource)</label>
+            <div class="col-sm-10">
+                <InputSelect TValue="DataSources" class="form-control" @bind-Value="AreaCounterEntity.DataSource">
+                    @* 使用循环使用枚举项为下拉框填充项 **@
+                    @foreach (var item in Enum.GetValues(typeof(DataSources)))
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.Hide)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Hide)</label>
+            <div class="col-sm-10">
+                <InputCheckbox class="form-control" @bind-Value="AreaCounterEntity.Hide" />
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label for="@nameof(AreaCounterEntity.Remark)" class="col-sm-2 col-form-label">@nameof(AreaCounterEntity.Remark)</label>
+            <div class="col-sm-10">
+                <InputTextArea class="form-control" @bind-Value="AreaCounterEntity.Remark" />
+            </div>
+        </div>
+
+        <hr />
+        @* 提交事件按钮 *@
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </EditForm>
+}
+
+@code {
+    /// <summary>
+    /// 表单绑定的对象不可以为空引用
+    /// </summary>
+    public AreaCounter AreaCounterEntity { get; set; } = new AreaCounter() { Area = "C_" };
+
+    /// <summary>
+    /// 接收路由参数
+    /// </summary>
+    [Parameter]
+    public string Area { get; set; }
+
+    [Inject]
+    public ICovidCounterService CovidCounterService { get; set; }
+
+    [Inject]
+    public ILogger<PublishCounter> Logger { get; set; }
+
+    /// <summary>
+    /// 记录提交状态和结果
+    /// </summary>
+    private (bool? Status, string Message) Result = (null, string.Empty);
+
+    private async Task OnValidSubmit()
+    {
+        Logger.LogInformation($"{nameof(OnValidSubmit)}: {AreaCounterEntity.Area}=>{AreaCounterEntity.Count}");
+        try
+        {
+            var result = await CovidCounterService.PublishCounterAsync(this.AreaCounterEntity);
+            this.Result.Status = result;
+            this.Result.Message = "发布成功！";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, $"{nameof(OnValidSubmit)}: {AreaCounterEntity.Area}=>{AreaCounterEntity.Count}");
+            this.Result.Status = false;
+            this.Result.Message = $"发布失败！\n{ex.Message}";
+        }
+    }
+
+    private async Task OnInvalidSubmit()
+    {
+        Result.Status = false;
+        Result.Message = "表单验证失败！";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation($"{nameof(OnInitializedAsync)}: {nameof(Area)}=>{Area}");
+        try
+        {
+            // 存在路由参数时，读取已有数据，从创建状态进入编辑状态
+            if (!string.IsNullOrEmpty(Area))
+            {
+                AreaCounterEntity = await CovidCounterService.GetAreaCounterAsync(Area);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, $"{nameof(OnInitializedAsync)}: {nameof(Area)}=>{Area}");
+        }
+
+        await base.OnInitializedAsync();
+    }
+}
+```
+
+​	EditForm 创建一个 EditContext 作为级联值来跟踪有关编辑过程的元数据，其中包括已修改的字段和当前的验证消息。EditForm 还为有效和无效的提交提供便捷的事件（OnValidSubmit、OnInvalidSubmit）。或者，使用 OnSubmit 触发验证并使用自定义验证代码检查字段值。
+
+```c#
+<EditForm EditContext="@editContext" OnSubmit="HandleSubmit">
+    <button type="submit">Submit</button>
+</EditForm>
+
+@code {
+    private Starship starship = new Starship();
+    private EditContext editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(starship);
+    }
+
+    private async Task HandleSubmit()
+    {
+        var isValid = editContext.Validate() && 
+            await ServerValidate(editContext);
+
+        if (isValid)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    private async Task<bool> ServerValidate(EditContext editContext)
+    {
+        var serverChecksValid = ...
+        return serverChecksValid;
+    }
+}
+```
+
+## Blazor布局组件
+
+> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/layouts?view=aspnetcore-3.1#mainlayout-component
+
+​	
