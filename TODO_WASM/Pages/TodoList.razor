@@ -1,4 +1,5 @@
 ﻿@page "/TodoList"
+@implements IDisposable
 
 <div class="container">
     <h1>To Do (@(TodoItems.Count(todo=>!todo.Done)) / @(TodoItems.Count()))</h1>
@@ -8,32 +9,48 @@
             @foreach (var todo in TodoItems)
             {
                 <li class="list-group-item">
-                    <Todo CurrentTodo="todo" CurrentTodoUpdate="TodoItemUpdate" CurrentTodoDelete="TodoItemDelete" />
+                    <Todo CurrentTodo="todo" @key="TodoItems" CurrentTodoUpdate="TodoItemUpdate" CurrentTodoDelete="TodoItemDelete" />
                 </li>
             }
         </ul>
     </div>
 
     <hr />
-    <div class="form-group row">
-        <input class="form-control col-sm-10" placeholder="Input title of new task ..." @bind="@NewTodo" />
-        <button class="btn btn-primary col-sm-2" @onclick="ClickAddTodo">Add</button>
-    </div>
+    <EditForm class="form-group row" EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
+        <InputText class="form-control col-sm-10" placeholder="Input title of new task ..." @bind-Value="@newTodo.Title" />
+        <button type="submit" class="btn btn-primary col-sm-2" disabled="@formInvalid">Add</button>
+    </EditForm>
 </div>
 
 @code {
     [Parameter]
     public ISet<TodoItem> TodoItems { get; set; } = new HashSet<TodoItem>();
 
-    [Parameter]
-    public string NewTodo { get; set; } = string.Empty;
+    private bool formInvalid = true;
+    private TodoItem newTodo { get; set; }
+    private EditContext editContext;
 
-    private void ClickAddTodo()
+    protected override void OnInitialized()
     {
-        if (string.IsNullOrEmpty(NewTodo)) return;
+        newTodo = new TodoItem();
+        editContext = new EditContext(newTodo);
+        editContext.OnFieldChanged += HandleFieldChanged;
 
-        TodoItems.Add(new TodoItem(NewTodo));
-        NewTodo = string.Empty;
+        base.OnInitialized();
+    }
+
+    private void HandleFieldChanged(object sender, FieldChangedEventArgs e)
+    {
+        formInvalid = !editContext.Validate();
+        StateHasChanged();
+    }
+
+    private void HandleValidSubmit()
+    {
+        if (string.IsNullOrEmpty(newTodo.Title)) return;
+
+        TodoItems.Add(new TodoItem(newTodo.Title));
+        newTodo.Title = string.Empty;
     }
 
     private void TodoItemUpdate(TodoItem todo)
@@ -44,5 +61,10 @@
     private void TodoItemDelete(TodoItem todo)
     {
         TodoItems.Remove(todo);
+    }
+
+    public void Dispose()
+    {
+        editContext.OnFieldChanged -= HandleFieldChanged;
     }
 }
