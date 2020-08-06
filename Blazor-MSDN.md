@@ -1108,6 +1108,131 @@ public class ThemeInfo { public string Class { get; set; } }
 }
 ```
 
+## 数据绑定
+
+​	Razor 组件使用`@bing`HTML元素特性实现数据绑定，其具有字段、属性或Razor表达式值。
+
+```html
+<input @bind="CurrentValue" />
+
+@code {
+    private string CurrentValue { get; set; }
+}
+```
+
+​	等效于：
+
+```c#
+<input value="@CurrentValue"
+    @onchange="@((ChangeEventArgs __e) => CurrentValue = 
+        __e.Value.ToString())" />
+        
+@code {
+    private string CurrentValue { get; set; }
+}
+```
+
+​	呈现组件时，输入元素的 `value` 来自 `CurrentValue` 属性。 用户在文本框中键入并更改元素焦点时，会激发 `onchange` 事件并将 `CurrentValue` 属性设置为更改的值。 实际上，代码生成更加复杂，因为 `@bind` 会处理执行类型转换的情况。 原则上，`@bind` 将表达式的当前值与 `value` 属性关联，并使用注册的处理程序处理更改。
+
+​	通过同时包含带有 `event` 参数的 `@bind:event` 属性，在其他事件上绑定属性或字段。
+
+​	通过 `@bind-{ATTRIBUTE}:event` 语法使用 `@bind-{ATTRIBUTE}` 可绑定除 `value` 之外的元素属性。
+
+​	注意bind的大小写，`@bind`有效，`@Bind`和`@BIND`无效。
+
+### 无法分析的值
+
+​	如果用户向数据绑定元素提供无法分析的值，则在触发绑定事件时，无法分析的值会自动还原为以前的值。
+
+### 格式字符串
+
+​	数据绑定使用 `@bind:format` 作为格式字符串。
+
+### 使用组件参数的父级到子级绑定
+
+​	绑定可识别组件参数，其中 `@bind-{PROPERTY}` 可以将属性值从父组件向下绑定到子组件。
+
+​	要求子组件必有与绑定属性匹配的事件：
+
+- EventCallBack\<TValue> 必须命名为组件参数后跟 `Changed` 后缀。
+
+```C#
+<h2>Child Component</h2>
+
+<p>Year: @Year</p>
+
+@code {
+    [Parameter]
+    public int Year { get; set; }
+    
+    [Parameter]
+    public EventCallback<int> YearChanged { get; set; }
+}
+```
+
+```asp
+@page "/ParentComponent"
+
+<h1>Parent Component</h1>
+<p>ParentYear: @ParentYear</p>
+
+@* 绑定父组件的 ParentYear 到子组件的 Year *@
+<ChildComponent @bind-Year="ParentYear" />
+@* 等效于 *@
+<ChildComponent @bind-Year="ParentYear" @bind-Year:event="YearChanged" />
+
+<button class="btn btn-primary" @onclick="ChangeTheYear">Change ParentYear to 1986</button>
+
+@code {
+    [Parameter]
+    public int ParentYear { get; set; } = 1978;
+
+    private void ChangeTheYear()
+    {
+        ParentYear = 1986;
+    }
+}
+```
+
+### 使用链接绑定的子级到父级绑定
+
+​	一种常见方案是将数据绑定参数链接到组件输出中的页面元素。 此方案称为链接绑定，因为多个级别的绑定会同时进行。
+
+​	无法在页面元素中使用 `@bind` 语法实现链接绑定。 必须单独指定事件处理程序和值。 但是，父组件可以将 `@bind` 语法用于组件的参数。
+
+```C#
+<h1>Child Component</h1>
+<input @oninput="OnPasswordChanged" value="@Password" />
+
+@code {
+    [Parameter]
+    public string Password { get; set; }
+
+    [Parameter]
+    public EventCallback<string> PasswordChanged { get; set; }
+
+    private Task OnPasswordChanged(ChangeEventArgs e)
+    {
+        Password = e.Value.ToString();
+        return PasswordChanged.InvokeAsync(Password);
+    }
+}
+```
+
+```asp
+@page "/ParentComponent"
+
+<h1>Parent Component</h1>
+
+<PasswordField @bind-Password="password" />
+
+@code {
+    private string password;
+}
+```
+
+
+
 ## 子内容
 
 ​	组件可以在组件标记之间提供另一个组件的内容。属性名称和类型是固定的。
