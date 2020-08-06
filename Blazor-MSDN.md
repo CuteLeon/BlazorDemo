@@ -1233,6 +1233,10 @@ public class ThemeInfo { public string Class { get; set; } }
 
 
 
+## 事件处理
+
+> TODO: https://docs.microsoft.com/zh-cn/aspnet/core/blazor/components/event-handling?view=aspnetcore-3.1
+
 ## 子内容
 
 ​	组件可以在组件标记之间提供另一个组件的内容。属性名称和类型是固定的。
