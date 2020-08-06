@@ -1853,6 +1853,122 @@ else
 
 ## Blazor布局组件
 
-> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/layouts?view=aspnetcore-3.1#mainlayout-component
+​	布局也是一个组件。布局在Razor模板或C#代码中定义，并可以使用数据绑定、依赖注入和其他组件方案。
 
-​	
+​	创建一个布局组件，需要以下步骤：
+
+- 继承自 LayoutComponentBase，为布局内的呈现内容定义Body属性。
+- 使用Razor语法 `@Body` 在布局标记中指定呈现内容的位置。
+
+````c#
+@inherits LayoutComponentBase
+
+<header>
+    <h1>Doctor Who&trade; Episode Database</h1>
+</header>
+
+<nav>
+    <a href="masterlist">Master Episode List</a>
+    <a href="search">Search</a>
+    <a href="new">Add Episode</a>
+</nav>
+
+@Body
+
+<footer>
+    @TrademarkMessage
+</footer>
+
+@code {
+    public string TrademarkMessage { get; set; } = "Doctor Who is a registered trademark of the BBC. https://www.doctorwho.tv/";
+}
+````
+
+### 默认布局
+
+​	在应用的 `App.razor` 文件的 Router 组件中指定默认应用布局。 默认为 `MainLayout` 组件：
+
+```html
+<Router AppAssembly="@typeof(Startup).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <p>Sorry, there's nothing at this address.</p>
+    </NotFound>
+</Router>
+```
+
+​	若要为 NotFound 内容提供默认布局，请为 NotFound 内容指定 LayoutView：
+
+```html
+<Router AppAssembly="@typeof(Startup).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <h1>Page not found</h1>
+            <p>Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
+```
+
+### 在组件中使用布局
+
+​	使用 Razor 指令 `@layout` 将布局应用于组件。 编译器将 `@layout` 转换为 LayoutAttribute，后者应用于组件类。
+
+​	以下 `MasterList` 组件的内容插入到 `MasterLayout` 中 `@Body` 的位置：
+
+```html
+@layout MasterLayout
+@page "/masterlist"
+
+<h1>Master Episode List</h1>
+```
+
+### 集中式布局选择
+
+​	应用的每个文件夹都可以选择包含名为 `_Imports.razor` 的模板文件。 编译器将导入文件中指定的指令包括在同一文件夹中的所有 Razor 模板内，并在其所有子文件夹中以递归方式包括。 因此，包含 `@layout MyCoolLayout` 的 `_Imports.razor` 文件可确保文件夹中的所有组件都使用 `MyCoolLayout`。 无需将 `@layout MyCoolLayout` 重复添加到文件夹和子文件夹内的所有 `.razor` 文件。 `@using` 指令也以相同的方式应用于组件。
+
+> 请勿向根 `_Imports.razor` 文件添加 Razor `@layout` 指令，这会导致应用中的布局形成无限循环 （因为根_Imports.razor 文件和Shared目录在同一级，会向Shared目录内的布局组件循环嵌套自身布局组件）。 请在 `Router` 组件中指定布局，以控制默认应用布局。
+
+### 嵌套布局
+
+​	应用可以包含嵌套布局。 组件可以引用一个布局，该布局反过来引用另一个布局。
+
+```c#
+@layout ListLayout
+@page "/list/{Id}/Detail"
+<h1>@Id</h1>
+@{ public string Id {get; set; } }
+```
+
+```asp
+@layout MainLayout
+@inherits LayoutComponentBase
+@* ListLayout *@
+
+<nav>
+    ...
+</nav>
+
+@Body
+```
+
+```asp
+@inherits LayoutComponentBase
+@* MainLayout *@
+
+<header>...</header>
+<nav>...</nav>
+
+@Body
+
+<footer>...</footer>
+```
+
+### 与集成组件共享 Razor Pages 布局
+
+​	当可路由组件集成到 Razor Pages 应用中时，该应用的共享布局可与这些组件配合使用。
