@@ -1058,6 +1058,56 @@ builder.Logging.AddProvider(new CustomLoggingProvider());
 </ChildComponent>
 ```
 
+### 级联值和参数
+
+​	级联值和参数用于在有多个组件层时使祖先组件为**所有**子组件提供值。使用 CascadingValue\<TValue> 组件包装组件层次结构的子树，并向该子树内的所有组件提供单个值。如果有多个级联值，可以嵌套多个该组件。
+
+​	为了使用级联值，组件使用`[CascadingParameter\]` 特性来声明级联参数，级联值按类型绑定到级联参数。如果有多个相同类型的级联参数，需要向级联组件和对应的`[CascadingParameter]`特性提供唯一的Name。
+
+```c#
+/// 作为级联值的类
+public class ThemeInfo { public string Class { get; set; } }
+```
+
+````html
+@* 布局组件 *@
+@inherits LayoutComponentBase
+
+<div class="container-fluid">
+    <div class="col-sm-9">
+        @* 使用CascadingValue组件包装并传递级联值 *@
+        <CascadingValue Value="labelTheme" Name="LabelClass">
+            <CascadingValue Value="buttonTheme" Name="ButtonClass">
+            	<div class="content px-4">
+                	@Body
+	            </div>
+    	    </CascadingValue>
+        </CascadingValue>
+    </div>
+</div>
+
+@code {
+    private ThemeInfo buttonTheme = new ThemeInfo { Class = "btn-success" };
+    private ThemeInfo labelTheme = new ThemeInfo { Class = "h3" };
+}
+````
+
+```html
+@page "/page"
+@layout MainLayout
+
+<p class="@labelTheme.Class">I am a label</p>
+<button class="btn @buttonTheme.Class">Click Me</button>
+
+@code {
+	[CascadingParameter(Name = "ButtonTheme")]
+    protected ThemeInfo buttonTheme { get; set; }
+
+	[CascadingParameter(Name = "LabelTheme")]
+	protected ThemeInfo labelTheme { get; set; }
+}
+```
+
 ## 子内容
 
 ​	组件可以在组件标记之间提供另一个组件的内容。属性名称和类型是固定的。
