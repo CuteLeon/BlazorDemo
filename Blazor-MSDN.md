@@ -1235,7 +1235,104 @@ public class ThemeInfo { public string Class { get; set; } }
 
 ## 事件处理
 
-> TODO: https://docs.microsoft.com/zh-cn/aspnet/core/blazor/components/event-handling?view=aspnetcore-3.1
+​	Razor 组件提供事件处理功能。 对于具有委托类型值的名为 `@on{EVENT}` 的 HTML 元素属性，Razor 组件将此属性的值视为事件处理程序。
+
+​	事件处理程序也可以是异步处理程序，并返回 Task，无需手动调用StateHasChanged。异常发生时，将会被记录下来。
+
+```c#
+<button class="btn btn-primary" @onclick="UpdateHeading">Update heading</button>
+<input type="checkbox" class="form-check-input" @onchange="CheckChanged" />
+
+@code {
+    private async Task UpdateHeading(MouseEventArgs e) { ... }
+    private void CheckChanged() { ... }
+}
+```
+
+### 事件参数类型
+
+​	对于某些事件，允许使用事件参数类型。 在事件方法定义中指定事件参数是可选操作，只有当方法中使用了事件类型时才是必需的。
+
+| 事件      | 类               | DOM 事件和说明         |
+| :------- | :--------------- | :------------------- |
+| 剪贴板   | ClipboardEventArgs | `oncut`, `oncopy`, `onpaste`                                 |
+| 拖动     | DragEventArgs | `ondrag`, `ondragstart`, `ondragenter`, `ondragleave`, `ondragover`, `ondrop`, `ondragend`  DataTransfer 和 DataTransferItem 保留拖动的项数据。 |
+| 错误     | ErrorEventArgs | `onerror' |
+| 事件     | EventArgs | *常规* `onactivate`, `onbeforeactivate`, `onbeforedeactivate`, `ondeactivate`, `onfullscreenchange`, `onfullscreenerror`, `onloadeddata`, `onloadedmetadata`, `onpointerlockchange`, `onpointerlockerror`, `onreadystatechange`, `onscroll`  *剪贴板* `onbeforecut`, `onbeforecopy`, `onbeforepaste`  *输入* `oninvalid`, `onreset`, `onselect`, `onselectionchange`, `onselectstart`, OnSubmit  *介质* `oncanplay`, `oncanplaythrough`, `oncuechange`, `ondurationchange`, `onemptied`, `onended`, `onpause`, `onplay`, `onplaying`, `onratechange`, `onseeked`, `onseeking`, `onstalled`, `onstop`, `onsuspend`, `ontimeupdate`, `onvolumechange`, `onwaiting`  EventHandlers 保留属性，以配置事件名称和事件参数类型之间的映射。 |
+| 焦点     | FocusEventArgs | `onfocus`, `onblur`, `onfocusin`, `onfocusout`  不包含对 `relatedTarget` 的支持。 |
+| 输入     | ChangeEventArgs | `onchange`，`oninput' |
+| 键盘     | KeyboardEventArgs | `onkeydown`, `onkeypress`, `onkeyup' |
+| 鼠标     | MouseEventArgs | `onclick`, `oncontextmenu`, `ondblclick`, `onmousedown`, `onmouseup`, `onmouseover`, `onmousemove`, `onmouseout' |
+| 鼠标指针 | PointerEventArgs | `onpointerdown`, `onpointerup`, `onpointercancel`, `onpointermove`, `onpointerover`, `onpointerout`, `onpointerenter`, `onpointerleave`, `ongotpointercapture`, `onlostpointercapture' |
+| 鼠标滚轮 | WheelEventArgs | `onwheel`，`onmousewheel' |
+| 进度     | ProgressEventArgs | `onabort`, `onload`, `onloadend`, `onloadstart`, `onprogress`, `ontimeout' |
+| 触控     | TouchEventArgs | `ontouchstart`, `ontouchend`, `ontouchmove`, `ontouchenter`, `ontouchleave`, `ontouchcancel`  TouchPoint 表示触控敏感型设备上的单个接触点。 |
+
+### Lambda表达式
+
+```html
+<button @onclick="@(e => Console.WriteLine("Hello, world!"))">Say hello</button>
+```
+
+### EventCallback
+
+​		嵌套组件的一个常见场景：希望在子组件事件发生时运行父组件的方法。 子组件中发生的 `onclick` 事件是一个常见用例。 若要跨组件公开事件，请使用 EventCallback，父组件可向子组件的 EventCallback 分配回调方法。
+
+​	EventCallback 和 EventCallback 允许异步委托。EventCallback 是弱类型，允许将任何类型参数传入 `InvokeAsync(Object)`。EventCallback 是强类型，需要将 `T` 参数传入可分配到 `TValue` 的 `InvokeAsync(T)` 中。
+
+### 阻止默认操作
+
+​	使用 `@on{EVENT}:preventDefault` 指令属性可阻止事件的默认操作。
+
+​	属性的值也可以是表达式。指定没有值的 `@on{EVENT}:preventDefault` 属性等同于 `@on{EVENT}:preventDefault="true"`。
+
+```c#
+<input value="@count" @onkeypress="KeyHandler" @onkeypress:preventDefault />
+
+@code {
+    private int count = 0;
+
+    private void KeyHandler(KeyboardEventArgs e)
+    {
+        if (e.Key == "+")
+        {
+            count++;
+        }
+    }
+}
+```
+
+### 停止事件传播
+
+​	使用 `@on{EVENT}:stopPropagation` 指令属性来停止事件传播。
+
+```c#
+<label>
+    <input @bind="stopPropagation" type="checkbox" />
+    Stop Propagation
+</label>
+
+<div @onclick="OnSelectParentDiv">
+    <h3>Parent div</h3>
+
+    <div @onclick="OnSelectChildDiv">
+        Child div that doesn't stop propagation when selected.
+    </div>
+
+    <div @onclick="OnSelectChildDiv" @onclick:stopPropagation="stopPropagation">
+        Child div that stops propagation when selected.
+    </div>
+</div>
+
+@code {
+    private bool stopPropagation = false;
+
+    private void OnSelectParentDiv() => 
+        Console.WriteLine($"The parent div was selected. {DateTime.Now}");
+    private void OnSelectChildDiv() => 
+        Console.WriteLine($"A child div was selected. {DateTime.Now}");
+}
+```
 
 ## 子内容
 
