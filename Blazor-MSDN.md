@@ -2462,6 +2462,396 @@ else
 
 ​	模板化组件通常是泛型类型，请使用 `@typeparam` 指令指定类型参数。
 
-# 集成组件
+# 全球化和本地化
 
-​	Razor 组件可以集成到 Razor Pages 和 MVC 应用。 呈现页面或视图时，可以同时预呈现组件。
+​	Razor 组件可供位于不同区域、使用不同语言的用户使用。 以下 .NET 全球化和本地化方案可用：
+
+- .NET 资源系统
+- 特定于区域性的数字和日期格式
+
+当前支持有限的 ASP.NET Core 本地化方案：
+
+- Blazor 应用中支持 IStringLocalizer 和 IStringLocalizer。
+- IHtmlLocalizer、IViewLocalizer 和数据注释本地化是 ASP.NET Core MVC 方案，在 Blazor 应用中不受支持。
+
+## 全球化
+
+​	Blazor 的 `@bind` 功能基于用户的当前区域性执行格式并分析值以进行显示。可从 System.Globalization.CultureInfo.CurrentCulture 属性访问当前区域性。`@bind` 支持 `@bind:culture` 参数，以提供用于分析值并设置值格式的 System.Globalization.CultureInfo。
+
+## 本地化
+
+### Blazor WebAssembly
+
+​	Blazor WebAssembly 应用使用用户的语言首选项设置区域性。若要显式配置区域性，请在 `Program.Main` 中设置 CultureInfo.DefaultThreadCurrentCulture 和 CultureInfo.DefaultThreadCurrentUICulture。
+
+​	默认情况下，Blazor 对于 Blazor WebAssembly 应用的链接器配置会去除国际化信息（显式请求的区域设置除外）。虽然 Blazor 默认选择的区域性可能足以满足大多数用户的需求，但请考虑为用户提供一种指定其首选区域设置的方法。
+
+### Blazor Server
+
+​	Blazor Server 应用使用本地化中间件进行本地化。 中间件为从应用请求资源的用户选择相应的区域性。
+
+​	可使用以下方法之一设置区域性：
+
+- Cookie
+- 提供用于选择区域性的 UI
+
+## ASP.NET Core 全球化和本地化
+
+​	 全球化是设计支持不同区域性的应用程序的过程，全球化添加了对一组有关特定地理区域的已定义语言脚本的输入、显示和输出支持。本地化是将已经针对可本地化性进行处理的全球化应用调整为特定的区域性/区域设置的过程。
+
+### 使应用内容可本地化
+
+​	已为 IStringLocalizer 和 IStringLocalizer 设置架构，可以为开发本地化应用提高工作效率。`IStringLocalizer` 使用 ResourceManager 和 ResourceReader 在运行时提供特定于区域性的资源。接口具有一个索引器和一个用于返回本地化字符串的 `IEnumerable`。`IStringLocalizer` 不要求在资源文件中存储默认语言字符串。 你可以开发针对本地化的应用，且无需在开发初期创建资源资源文件。
+
+​	 如果找不到索引器键的本地化值，则返回索引器键。可将默认语言文本字符串保留在应用中并将它们包装在本地化工具中，以便你可集中精力开发应用。 你使用默认语言开发应用，并针对本地化步骤进行准备，而无需首先创建默认资源文件。
+
+#### 注入 IStringLocalizer
+
+```c#
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+
+namespace Localization.Controllers
+{
+    [Route("api/[controller]")]
+    public class AboutController : Controller
+    {
+        private readonly IStringLocalizer<AboutController> _localizer;
+
+        public AboutController(IStringLocalizer<AboutController> localizer)
+        {
+            _localizer = localizer;
+        }
+
+        [HttpGet]
+        public string Get()
+        {
+            return _localizer["About Title"];
+        }
+    }
+}
+```
+
+#### 注入 IStringLocalizerFactory
+
+```c#
+public class TestController : Controller
+{
+    private readonly IStringLocalizer _localizer;
+
+    public TestController(IStringLocalizerFactory factory)
+    {
+        var type = typeof(SharedResource);
+        _localizer = factory.Create(type);
+    }
+
+    public IActionResult About()
+    {
+    	ViewData["Message"] = _localizer["Your application description page."];
+    }
+}
+```
+
+#### 注入全局或共享IStringLocalizer
+
+```c#
+public class InfoController : Controller
+{
+    private readonly IStringLocalizer<InfoController> _localizer;
+    private readonly IStringLocalizer<SharedResource> _sharedLocalizer;
+
+    public InfoController(IStringLocalizer<InfoController> localizer, IStringLocalizer<SharedResource> sharedLocalizer)
+    {
+        _localizer = localizer;
+        _sharedLocalizer = sharedLocalizer;
+    }
+
+    public string TestLoc()
+    {
+		return $"Shared resx: {_sharedLocalizer["Hello!"]}，Info resx：{_localizer["Hello!"]}";
+    }
+}
+```
+
+### 资源文件
+
+​	资源文件是将可本地化的字符串与代码分离的有用机制。 非默认语言的转换字符串在 .resx 资源文件中单独显示。
+
+1. 在“解决方案资源管理器”中，右键单击将包含资源文件的文件夹 >“添加”>“新项” 。
+2. 在“搜索已安装的模板”框中，选择“资源文件”并命名该文件。
+3. 在“名称”列中输入键值（本机字符串），在“值”列中输入转换字符串 。
+
+### 资源文件命名
+
+​	资源名称是类的完整类型名称减去程序集名称。
+
+​	资源名称是类的完整类型名称减去程序集名称。 例如，类 `LocalizationWebsite.Web.Startup` 的主要程序集为 `LocalizationWebsite.Web.dll` 的项目中的法语资源将命名为 Startup.fr.resx。 类 `LocalizationWebsite.Web.Controllers.HomeController` 的资源将命名为 Controllers.HomeController.fr.resx。 如果目标类的命名空间与将需要完整类型名称的程序集名称不同。 例如，在示例项目中，类型 `ExtraNamespace.Tools` 的资源将命名为 ExtraNamespace.Tools.fr.resx。
+
+### 添加其他区域性
+
+​	每个语言和区域性组合（除默认语言外）都需要唯一资源文件。 通过新建 ISO 语言代码属于名称一部分的资源文件，为不同的区域性和区域设置创建资源文件。这些 ISO 编码位于文件名和 .resx 文件扩展之间。
+
+### 实施策略，为每个请求选择语言/区域性
+
+#### 配置本地化
+
+​	通过 `Startup.ConfigureServices` 方法配置本地化：
+
+```C#
+services.AddLocalization(options => options.ResourcesPath = "Resources");
+services.AddMvc()
+    .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
+    .AddDataAnnotationsLocalization();
+```
+
+#### 本地化中间件
+
+​	在本地化中间件中设置有关请求的当前区域性。 在 `Startup.Configure` 方法中启用本地化中间件。 必须在中间件前面配置本地化中间件，它检查请求区域性。
+
+```c#
+var supportedCultures = new[] { "en-US", "fr" };
+var localizationOptions = new RequestLocalizationOptions().SetDefaultCulture(supportedCultures[0])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
+
+app.UseStaticFiles();
+app.UseAuthentication();
+app.UseMvcWithDefaultRoute();
+```
+
+# 互操作性
+
+​	Blazor 应用可从 .NET 方法调用 JavaScript 函数，也可从 JavaScript 函数调用 .NET 方法。 这被称为 JavaScript 互操作（JS 互操作） 。
+
+## .NET 调用 JavaScript
+
+​	若要从 .NET 调入 JavaScript，请使用 IJSRuntime 抽象。 若要发出 JS 互操作调用，请在组件中注入 IJSRuntime 抽象。InvokeAsync 需要使用你要调用的 JavaScript 函数的标识符，以及任意数量的 JSON 可序列化参数。 函数标识符相对于全局范围 (`window`)。 如果要调用 `window.someScope.someFunction`，则标识符是 `someScope.someFunction`。 无需在调用函数之前进行注册。 返回类型 `T` 也必须可进行 JSON 序列化。 `T` 应该与最能映射到所返回 JSON 类型的 .NET 类型匹配。
+
+### IJSRuntime
+
+​	通过 `JSRuntimeExtensions.InvokeVoidAsync` 进行调用，不返回值。
+
+​	通过 `JSRuntime.InvokeAsync` 进行调用，会返回值。
+
+```c#
+@inject IJSRuntime JSRuntime
+
+@code {
+    protected override void OnInitialized()
+    {
+        StocksService.OnStockTickerUpdated += stockUpdate =>
+        {
+            JSRuntime.InvokeVoidAsync("handleTickerChanged", stockUpdate.symbol, stockUpdate.price);
+        };
+    }
+}
+```
+
+```js
+<script>
+  window.handleTickerChanged = (symbol, price) => {
+    // ... client-side processing/display code ...
+  };
+</script>
+```
+
+```js
+window.exampleJsFunctions = {
+  showPrompt: function (text) {
+    return prompt(text, 'Type your name here');
+  },
+  displayWelcome: function (welcomeMessage) {
+    document.getElementById('welcome').innerText = welcomeMessage;
+  }
+};
+```
+
+​	请勿将 `<script>` 标记置于组件文件中，因为 `<script>` 标记无法动态更新。
+
+### 捕获对元素的引用
+
+​	某些 JS 互操作方案需要引用 HTML 元素。使用以下方法在组件中捕获对 HTML 元素的引用：
+
+- 向 HTML 元素添加 `@ref` 属性。
+- 定义一个类型为 ElementReference 字段，其名称与 `@ref` 属性的值匹配。
+
+```c#
+<input @ref="username" ... />
+
+@code {
+    ElementReference username;
+}
+```
+
+​	就 .NET 代码而言，ElementReference 是不透明的句柄。 可以对 ElementReference 执行的唯一操作是通过 JS 互操作将它传递给 JavaScript 代码。 执行此操作时，JavaScript 端代码会收到一个 `HTMLElement` 实例，该实例可以与常规 DOM API 一起使用。
+
+### 跨组件引用元素
+
+​	ElementReference 仅保证在组件的 OnAfterRender 方法中有效（并且元素引用为 `struct`），因此无法在组件之间传递元素引用。
+
+​	若要使父组件可以向其他组件提供元素引用，父组件可以：
+
+- 允许子组件注册回调。
+- 在 OnAfterRender 事件期间，通过传递的元素引用调用注册的回调。 此方法间接地允许子组件与父级的元素引用交互。
+
+### 避免循环引用对象
+
+​	不能在客户端上针对以下调用就包含循环引用的对象进行序列化：
+
+- .NET 方法调用。
+- 返回类型具有循环引用时，从 C# 发出的 JavaScript 方法调用。
+
+## JavaScript 调用 .NET
+
+### 静态 .NET 方法调用
+
+​	要从 JavaScript 调用静态 .NET 方法，请使用 `DotNet.invokeMethod` 或 `DotNet.invokeMethodAsync` 函数。 传入要调用的静态方法的标识符、包含该函数的程序集的名称以及任意自变量。
+
+​	 .NET 方法必须是公共的静态方法，并且包含 `[JSInvokable]` 特性。
+
+```c#
+<button type="button" class="btn btn-primary"
+        onclick="exampleJsFunctions.returnArrayAsyncJs()">
+    Trigger .NET static method ReturnArrayAsync
+</button>
+
+@code {
+    [JSInvokable]
+    public static Task<int[]> ReturnArrayAsync()
+    {
+        return Task.FromResult(new int[] { 1, 2, 3 });
+    }
+}
+```
+
+```js
+window.exampleJsFunctions = {
+  returnArrayAsyncJs: function () {
+    DotNet.invokeMethodAsync('BlazorSample', 'ReturnArrayAsync')
+      .then(data => {
+        data.push(4);
+          console.log(data);
+      });
+  }
+};
+```
+
+### 实例方法调用
+
+​	还可以从 JavaScript 调用 .NET 实例方法，记得释放 DotNetObjectReference 对象。 从 JavaScript 调用 .NET 实例方法：
+
+- 按引用向 JavaScript 传递 .NET 实例：
+  - 对 DotNetObjectReference.Create 进行静态调用。
+  - 在 DotNetObjectReference 实例中包装实例，并在 DotNetObjectReference 实例上调用 Create。处置 DotNetObjectReference 对象。
+- 使用 `invokeMethod` 或 `invokeMethodAsync` 函数在实例上调用 .NET 实例方法。 在从 JavaScript 调用其他 .NET 方法时，也可以将 .NET 实例作为自变量传递。
+
+```c#
+<button type="button" class="btn btn-primary" @onclick="TriggerNetInstanceMethod">
+    Trigger .NET instance method HelloHelper.SayHello
+</button>
+
+@code {
+    public async Task TriggerNetInstanceMethod()
+    {
+        var exampleJsInterop = new ExampleJsInterop(JSRuntime);
+        await exampleJsInterop.CallHelloHelperSayHello("Blazor");
+    }
+}
+```
+
+```c#
+public class ExampleJsInterop : IDisposable
+{
+    private readonly IJSRuntime jsRuntime;
+    private DotNetObjectReference<HelloHelper> objRef;
+
+    public ExampleJsInterop(IJSRuntime jsRuntime)
+    {
+        this.jsRuntime = jsRuntime;
+    }
+
+    public ValueTask<string> CallHelloHelperSayHello(string name)
+    {
+        objRef = DotNetObjectReference.Create(new HelloHelper(name));
+
+        return jsRuntime.InvokeAsync<string>(
+            "exampleJsFunctions.sayHello",
+            objRef);
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+}
+```
+
+```js
+window.exampleJsFunctions = {
+  sayHello: function (dotnetHelper) {
+    return dotnetHelper.invokeMethodAsync('SayHello')
+      .then(r => console.log(r));
+  }
+};
+```
+
+```c#
+public class HelloHelper
+{
+    public HelloHelper(string name)
+        => Name = name;
+
+    public string Name { get; set; }
+
+    [JSInvokable]
+    public string SayHello() => $"Hello, {Name}!";
+}
+```
+
+### 组件实例方法调用
+
+​	要调用组件的 .NET 方法，请执行以下操作：
+
+- 使用 `invokeMethod` 或 `invokeMethodAsync` 函数对组件执行静态方法调用。
+- 组件的静态方法将其实例方法调用包装为已调用的 Action。
+
+```js
+function updateMessageCallerJS() {
+  DotNet.invokeMethod('{APP ASSEMBLY}', 'UpdateMessageCaller');
+}
+```
+
+```c#
+@page "/JSInteropComponent"
+
+<p>Message: @message</p>
+<p><button onclick="updateMessageCallerJS()">Call JS Method</button></p>
+
+@code {
+    private static Action action;
+    private string message = "Select the button.";
+
+    protected override void OnInitialized()
+    {
+        action = UpdateMessage;
+    }
+
+    private void UpdateMessage()
+    {
+        message = "UpdateMessage Called!";
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public static void UpdateMessageCaller()
+    {
+        action.Invoke();
+    }
+}
+```
+
+## Blazor 调用 Web API
+
+> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/call-web-api?view=aspnetcore-3.1
