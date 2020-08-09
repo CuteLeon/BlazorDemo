@@ -2375,3 +2375,93 @@ else
 ### 与集成组件共享 Razor Pages 布局
 
 ​	当可路由组件集成到 Razor Pages 应用中时，该应用的共享布局可与这些组件配合使用。
+
+# 模板化组件
+
+​	模板化组件是接受一个或多个 UI 模板作为参数的组件，然后可将其用作组件呈现逻辑的一部分。 通过模板化组件，可以创作适用面更广、比常规组件更便于重复使用的组件。
+
+## 模板参数
+
+​	通过指定一个或多个 RenderFragment 或 RenderFragment 类型的组件参数来定义模板化组件。 呈现片段，表示要呈现的 UI 段。RenderFragment 采用可在调用呈现片段时指定的类型参数。
+
+```c#
+@typeparam TItem
+
+<table class="table">
+    <thead>
+        <tr>@TableHeader</tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Items)
+        {
+            <tr>@RowTemplate(item)</tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public RenderFragment TableHeader { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem> RowTemplate { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<TItem> Items { get; set; }
+}
+```
+
+​	使用模板化组件时，可以使用与参数名称匹配的子元素指定模板参数：
+
+```html
+<TableTemplate Items="pets">
+    <TableHeader>
+        <th>ID</th>
+        <th>Name</th>
+    </TableHeader>
+    <RowTemplate>
+        <td>@context.PetId</td>
+        <td>@context.Name</td>
+    </RowTemplate>
+</TableTemplate>
+```
+
+## 模板上下文参数
+
+​	作为元素传递的 RenderFragment 类型的组件实参具有一个名为 `context` 的隐式形参，但可以使用子元素上的 `Context` 属性来更改形参名称。
+
+```html
+<TableTemplate Items="pets">
+    <TableHeader>
+        <th>ID</th>
+        <th>Name</th>
+    </TableHeader>
+    <RowTemplate Context="pet">
+        <td>@pet.PetId</td>
+        <td>@pet.Name</td>
+    </RowTemplate>
+</TableTemplate>
+```
+
+​	可以在组件元素上指定 `Context` 属性。 指定的 `Context` 属性适用于所有指定的模板参数。
+
+```html
+<TableTemplate Items="pets" Context="pet">
+    <TableHeader>
+        <th>ID</th>
+        <th>Name</th>
+    </TableHeader>
+    <RowTemplate>
+        <td>@pet.PetId</td>
+        <td>@pet.Name</td>
+    </RowTemplate>
+</TableTemplate>
+```
+
+## 泛型类型化组件
+
+​	模板化组件通常是泛型类型，请使用 `@typeparam` 指令指定类型参数。
+
+# 集成组件
+
+​	Razor 组件可以集成到 Razor Pages 和 MVC 应用。 呈现页面或视图时，可以同时预呈现组件。
