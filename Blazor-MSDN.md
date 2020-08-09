@@ -1644,7 +1644,7 @@ public RenderFragment ChildContent { get; set; }
 
 ## Razor模板
 
-​	使用 `RenderFragment` 和 `RenderFragment\<TValue>` 在组件中直接呈现目标那，也可以将呈现片段作为参数传递给模板化组件。
+​	使用 `RenderFragment` 和 `RenderFragment<TValue>` 在组件中直接呈现目标片段，也可以将呈现片段作为参数传递给模板化组件。
 
 ```c#
 @timeTemplate
