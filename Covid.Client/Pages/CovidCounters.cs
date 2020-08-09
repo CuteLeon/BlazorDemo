@@ -14,24 +14,29 @@ namespace Covid.Client.Pages
         [Inject]
         public ILogger<CovidCounters> Logger { get; set; }
 
-        protected override Task OnInitializedAsync()
+        protected override async Task OnInitializedAsync()
         {
             this.Logger.LogInformation(nameof(this.OnInitializedAsync));
-
             this.Areas = Enumerable.Range(-2, 12).Select(number => $"C_{number}");
-            return base.OnInitializedAsync();
+            await base.OnInitializedAsync();
         }
 
-        protected override Task OnParametersSetAsync()
+        public override async Task SetParametersAsync(ParameterView parameters)
+        {
+            this.Logger.LogInformation($"{nameof(SetParametersAsync)} with {parameters.ToDictionary().Count()} parameters.");
+            await base.SetParametersAsync(parameters);
+        }
+
+        protected override async Task OnParametersSetAsync()
         {
             this.Logger.LogInformation(nameof(this.OnParametersSetAsync));
-            return base.OnParametersSetAsync();
+            await base.OnParametersSetAsync();
         }
 
-        protected override Task OnAfterRenderAsync(bool firstRender)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             this.Logger.LogInformation(nameof(this.OnAfterRenderAsync));
-            return base.OnAfterRenderAsync(firstRender);
+            await base.OnAfterRenderAsync(firstRender);
         }
 
         protected override bool ShouldRender()
