@@ -2854,4 +2854,86 @@ function updateMessageCallerJS() {
 
 ## Blazor 调用 Web API
 
-> https://docs.microsoft.com/zh-cn/aspnet/core/blazor/call-web-api?view=aspnetcore-3.1
+> 添加 `System.Net.Http.Json` Nuget 包。
+
+​	Blazor WebAssembly 应用使用预配置的 HttpClient 服务调用 Web API。 使用 Blazor JSON 帮助程序或通过 HttpRequestMessage 撰写请求，其中可以包含 JavaScript Fetch API 选项。 Blazor WebAssembly 应用中的 HttpClient 服务侧重于使请求返回源服务器。
+
+### 添加 HttpClient 服务
+
+​	在 `Program.Main` 中个，如果 HttpClient 服务尚不存在，则添加它。
+
+```c#
+builder.Services.AddScoped(sp => 
+    new HttpClient
+    {
+        BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
+    });
+```
+
+### HttpClient 和 JSON
+
+​	在 Blazor WebAssembly 应用中，`HttpClient` 作为预配置服务提供，用于使请求返回源服务器。
+
+​	默认情况下，Blazor Server 应用不包含 HttpClient 服务。 使用 `HttpClient` 工厂基础结构向应用提供 HttpClient。
+
+​	HttpClient 和 JSON 帮助程序还用于调用第三方 Web API 终结点。HttpClient 使用浏览器 Fetch API 来实现，受其限制制约，包括强制实施相同初始策略。
+
+​	客户端的基址设置为原始服务器的地址。 使用 `@inject` 指令插入 HttpClient 实例。
+
+#### GetFromJsonAsync\<TValue>
+
+​	发送 HTTP GET 请求，并分析 JSON 响应正文来创建对象。
+
+#### PostAsJsonAsync
+
+​	发送 HTTP POST 请求（包括 JSON 编码的内容），并分析 JSON 响应正文来创建对象。
+
+#### PutAsJsonAsync
+
+​	发送 HTTP PUT 请求（包括 JSON 编码的内容）。
+
+### 命名 HttpClient 和 IHttpClientFactory
+
+> 添加 `Microsoft.Extensions.Http` Nuget 包	
+
+​	需要先通过名称注入 HttpClient，后续通过相同的名称获取 HttpClient。
+
+```c#
+builder.Services.AddHttpClient("ServerAPI", client => 
+    client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+```
+
+```c#
+@inject IHttpClientFactory ClientFactory
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var client = ClientFactory.CreateClient("ServerAPI");
+    }
+}
+```
+
+### 类型化 HttpClient
+
+​	注册为某些服务专用的HttpClient到服务容器。
+
+```c#
+builder.Services.AddHttpClient<WeatherForecastClient>(client => 
+    client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+```
+
+```c#
+using System.Net.Http;
+
+public class WeatherForecastClient
+{
+    private readonly HttpClient client;
+    public WeatherForecastClient(HttpClient client)
+        => this.client = client;
+}
+```
+
+### 跨域资源共享 (CORS)
+
+​	浏览器安全可防止网页向不同域（而不是向网页提供服务的域）进行请求。 此限制称为同域策略。 同域策略可防止恶意站点从另一站点读取敏感数据。 若要从浏览器向具有不同源的终结点进行请求，终结点必须启用跨域资源共享 (CORS)。
+
