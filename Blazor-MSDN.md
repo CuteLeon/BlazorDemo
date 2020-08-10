@@ -2937,3 +2937,158 @@ public class WeatherForecastClient
 
 ​	浏览器安全可防止网页向不同域（而不是向网页提供服务的域）进行请求。 此限制称为同域策略。 同域策略可防止恶意站点从另一站点读取敏感数据。 若要从浏览器向具有不同源的终结点进行请求，终结点必须启用跨域资源共享 (CORS)。
 
+# 身份验证和授权
+
+​	Blazor Server应用和 Blazor WebAssembly 应用的安全方案有所不同。 由于 Blazor Server应用在服务器上运行，因此授权检查可确定：
+
+- 向用户呈现的 UI 选项（例如，用户可以使用哪些菜单条目）。
+- 应用程序和组件区域的访问规则。
+
+​	Blazor WebAssembly 应用在客户端上运行。 授权仅用于确定要显示的 UI 选项。 由于用户可修改或绕过客户端检查，因此 Blazor WebAssembly 应用无法强制执行授权访问规则。
+
+## Blazor WebAssembly身份验证
+
+> 1. 应用项目文件 `Microsoft.AspNetCore.Components.Authorization` 的包引用。
+> 2. 应用的 `_Imports.razor` 文件的 `Microsoft.AspNetCore.Components.Authorization` 命名空间。
+> 3. 为处理身份验证，需实现内置或自定义 AuthenticationStateProvider 服务
+
+​	在 Blazor WebAssembly 应用中，可绕过身份验证检查，因为用户可修改所有客户端代码。 所有客户端应用程序技术都是如此，其中包括 JavaScript SPA 框架或任何操作系统的本机应用程序。
+
+## AuthenticationStateProvider 服务
+
+​	内置的 `AuthenticationStateProvider` 服务可从 ASP.NET Core 的 `HttpContext.User` 获取身份验证状态数据。 身份验证状态就是这样与现有 ASP.NET Core 身份验证机制集成。
+
+​	AuthenticationStateProvider 是 AuthorizeView 组件和 CascadingAuthenticationState 组件用于获取身份验证状态的基础服务。通常不直接使用 AuthenticationStateProvider。使用本文后面介绍的 `AuthorizeView` 组件 或 `Task<AuthenticationState>` 方法。 直接使用 AuthenticationStateProvider 的主要缺点是，如果基础身份验证状态数据发生更改，不会自动通知组件。
+
+```c#
+@page "/"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>ClaimsPrincipal Data</h3>
+<button @onclick="GetClaimsPrincipalData">Get ClaimsPrincipal Data</button>
+<p>@_authMessage</p>
+
+@if (_claims.Count() > 0)
+{
+    <ul>
+        @foreach (var claim in _claims)
+        {
+            <li>@claim.Type: @claim.Value</li>
+        }
+    </ul>
+}
+
+<p>@_surnameMessage</p>
+
+@code {
+    private string _authMessage;
+    private string _surnameMessage;
+    private IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
+
+    private async Task GetClaimsPrincipalData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            _authMessage = $"{user.Identity.Name} is authenticated.";
+            _claims = user.Claims;
+            _surnameMessage = $"Surname: {user.FindFirst(c => c.Type == ClaimTypes.Surname)?.Value}";
+        }
+        else
+        {
+            _authMessage = "The user is NOT authenticated.";
+        }
+    }
+}
+```
+
+## 自定义 AuthenticationStateProvider
+
+​	如果应用需要自定义提供程序，请实现 AuthenticationStateProvider 并替代 `GetAuthenticationStateAsync`。
+
+```c#
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components.Authorization;
+
+public class CustomAuthStateProvider : AuthenticationStateProvider
+{
+    public override Task<AuthenticationState> GetAuthenticationStateAsync()
+    {
+        var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "mrfibuli"), }, "Fake authentication type");
+        var user = new ClaimsPrincipal(identity);
+        return Task.FromResult(new AuthenticationState(user));
+    }
+}
+```
+
+```c#
+using Microsoft.AspNetCore.Components.Authorization;
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+```
+
+## 公开身份验证状态作为级联参数
+
+​	如果过程逻辑需要身份验证状态数据（如在执行用户触发的操作时），请通过定义类型为 `Task<AuthenticationState>` 的级联参数来获取身份验证状态数据。
+
+```c#
+@page "/"
+
+<button @onclick="LogUsername">Log username</button>
+<p>@_authMessage</p>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private string _authMessage;
+
+    private async Task LogUsername()
+    {
+        var authState = await authenticationStateTask;
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            _authMessage = $"{user.Identity.Name} is authenticated.";
+        }
+        else
+        {
+            _authMessage = "The user is NOT authenticated.";
+        }
+    }
+}
+```
+
+```html
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Program).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" 
+                DefaultLayout="@typeof(MainLayout)" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p>Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+```
+
+```c#
+builder.Services.AddOptions();
+builder.Services.AddAuthorizationCore();
+```
+
+## 授权
+
+​	对用户进行身份验证后，应用授权规则来控制用户可以执行的操作。通常根据以下几点确定是授权访问还是拒绝访问：
+
+- 已对用户进行身份验证（已登录）。
+- 用户属于某个角色。
+- 用户具有声明。
+- 满足策略要求。
