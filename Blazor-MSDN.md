@@ -2852,13 +2852,13 @@ function updateMessageCallerJS() {
 }
 ```
 
-## Blazor 调用 Web API
+# Blazor 调用 Web API
 
 > 添加 `System.Net.Http.Json` Nuget 包。
 
 ​	Blazor WebAssembly 应用使用预配置的 HttpClient 服务调用 Web API。 使用 Blazor JSON 帮助程序或通过 HttpRequestMessage 撰写请求，其中可以包含 JavaScript Fetch API 选项。 Blazor WebAssembly 应用中的 HttpClient 服务侧重于使请求返回源服务器。
 
-### 添加 HttpClient 服务
+## 添加 HttpClient 服务
 
 ​	在 `Program.Main` 中个，如果 HttpClient 服务尚不存在，则添加它。
 
@@ -2870,7 +2870,7 @@ builder.Services.AddScoped(sp =>
     });
 ```
 
-### HttpClient 和 JSON
+## HttpClient 和 JSON
 
 ​	在 Blazor WebAssembly 应用中，`HttpClient` 作为预配置服务提供，用于使请求返回源服务器。
 
@@ -2880,11 +2880,11 @@ builder.Services.AddScoped(sp =>
 
 ​	客户端的基址设置为原始服务器的地址。 使用 `@inject` 指令插入 HttpClient 实例。
 
-#### GetFromJsonAsync\<TValue>
+### GetFromJsonAsync\<TValue>
 
 ​	发送 HTTP GET 请求，并分析 JSON 响应正文来创建对象。
 
-#### PostAsJsonAsync
+### PostAsJsonAsync
 
 ​	发送 HTTP POST 请求（包括 JSON 编码的内容），并分析 JSON 响应正文来创建对象。
 
@@ -2892,7 +2892,7 @@ builder.Services.AddScoped(sp =>
 
 ​	发送 HTTP PUT 请求（包括 JSON 编码的内容）。
 
-### 命名 HttpClient 和 IHttpClientFactory
+## 命名 HttpClient 和 IHttpClientFactory
 
 > 添加 `Microsoft.Extensions.Http` Nuget 包	
 
@@ -2913,7 +2913,7 @@ builder.Services.AddHttpClient("ServerAPI", client =>
 }
 ```
 
-### 类型化 HttpClient
+## 类型化 HttpClient
 
 ​	注册为某些服务专用的HttpClient到服务容器。
 
@@ -2933,7 +2933,7 @@ public class WeatherForecastClient
 }
 ```
 
-### 跨域资源共享 (CORS)
+## 跨域资源共享 (CORS)
 
 ​	浏览器安全可防止网页向不同域（而不是向网页提供服务的域）进行请求。 此限制称为同域策略。 同域策略可防止恶意站点从另一站点读取敏感数据。 若要从浏览器向具有不同源的终结点进行请求，终结点必须启用跨域资源共享 (CORS)。
 
