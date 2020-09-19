@@ -937,7 +937,7 @@ builder.Logging.AddProvider(new CustomLoggingProvider());
 - 如果无法对 InvokeAsync 进行异步调用，则 .NET Task 会失败。 例如，JavaScript 端代码会引发异常或返回完成状态为 `rejected` 的 `Promise`。 开发人员代码必须捕获异常。 如果使用 `await` 运算符，请考虑使用 `try...catch` 语句包装方法调用，并进行错误处理和日志记录。
 - 默认情况下，对 InvokeAsync 的调用必须在特定时间段内完成，否则调用会超时。默认超时期限为一分钟。超时会保护代码免受网络连接丢失的影响，或者保护永远不会发回完成消息的 JavaScript 代码。 如果调用超时，则生成的 System.Threading.Tasks 将失败，并出现 OperationCanceledException。 捕获异常，并进行异常处理和日志记录。
 
-​	JavaScript 可以调用具有 `[JSInvokable]` 特性的.NET方法，这些.NET方法也可能会引发一场，但不会被视为严重的异常，JavScript端Promise会被拒绝。
+​	JavaScript 可以调用具有 `[JSInvokable]` 特性的.NET方法，这些.NET方法也可能会引发异常，但不会被视为严重的异常，JavScript端Promise会被拒绝。
 
 ### Blazor Server 预呈现
 
@@ -1189,7 +1189,7 @@ public override async Task SetParametersAsync(ParameterView parameters)
 
 ​	级联值和参数用于在有多个组件层时使祖先组件为**所有**子组件提供值。使用 CascadingValue\<TValue> 组件包装组件层次结构的子树，并向该子树内的所有组件提供单个值。如果有多个级联值，可以嵌套多个该组件。
 
-​	为了使用级联值，组件使用`[CascadingParameter\]` 特性来声明级联参数，级联值按类型绑定到级联参数。如果有多个相同类型的级联参数，需要向级联组件和对应的`[CascadingParameter]`特性提供唯一的Name。
+​	为了使用级联值，组件使用`[CascadingParameter]` 特性来声明级联参数，级联值按类型绑定到级联参数。如果有多个相同类型的级联参数，需要向级联组件和对应的`[CascadingParameter]`特性提供唯一的Name。
 
 ```c#
 /// 作为级联值的类
@@ -1406,6 +1406,18 @@ public class ThemeInfo { public string Class { get; set; } }
 ​		嵌套组件的一个常见场景：希望在子组件事件发生时运行父组件的方法。 子组件中发生的 `onclick` 事件是一个常见用例。 若要跨组件公开事件，请使用 EventCallback，父组件可向子组件的 EventCallback 分配回调方法。
 
 ​	EventCallback 和 EventCallback 允许异步委托。EventCallback 是弱类型，允许将任何类型参数传入 `InvokeAsync(Object)`。EventCallback 是强类型，需要将 `T` 参数传入可分配到 `TValue` 的 `InvokeAsync(T)` 中。
+
+```csharp
+<a role="button" class="nav-link text-warning" @onclick=" async()=> { if (this.OnTest.HasDelegate) await this.OnTest.InvokeAsync(); }">
+    测试
+</a>
+@code{
+    [Parameter]
+    public EventCallback<EventArgs> OnTest { get; set; }
+}
+/*——————————————————————————————————————————————————————————————*/
+<DesktopMenuComponent OnTest="this.OnTest"></DesktopMenuComponent>
+```
 
 ### 阻止默认操作
 
