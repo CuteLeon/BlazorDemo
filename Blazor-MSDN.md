@@ -3105,4 +3105,242 @@ builder.Services.AddAuthorizationCore();
 - 用户具有声明。
 - 满足策略要求。
 
-> TODO: https://docs.microsoft.com/zh-cn/aspnet/core/blazor/state-management?view=aspnetcore-3.1&pivots=webassembly
+# 状态管理
+
+​	在 Blazor WebAssembly 应用中创建的用户状态会保存在浏览器的内存中。**当用户关闭并重新打开其浏览器或重新加载页面时，浏览器的内存中保存的用户状态丢失。**
+
+浏览器内存中保留的用户状态的示例：
+
+- 呈现的 UI 中组件实例的层次结构及其最新的呈现输出。
+- 组件实例中的字段和属性的值。
+- 依赖关系注入 (DI) 服务实例中保留的数据。
+- 通过 JavaScript 互操作调用设置的值。
+
+## 跨浏览器会话保留状态
+
+​	通常情况下，在用户主动创建数据，而不是简单地读取已存在的数据时，会跨浏览器会话保持状态。
+
+​	若要跨浏览器会话保留状态，应用必须将数据保存到浏览器的内存以外的其他存储位置。 状态暂留并非是自动进行的。 必须在开发应用时采取措施来实现有状态的数据暂留。
+
+​	有三个常见位置用于保留状态：
+
+- 服务器端存储
+
+- URL
+
+- 浏览器存储
+
+  - Cookie (可超时)
+
+    > 可以设定缓存期限，并在**过期时自动移除**
+
+  - LocalStorage (更持久)
+
+    > 应用范围限定在浏览器窗口，如果**刷新页面**或**重启浏览器**，并不会丢失这些数据。
+    >
+    > 数据可以跨选项卡共享。
+    >
+    > 数据需要被**显式**清除。
+
+  - SessionStorage (更安全)
+
+    > 应用范围限定在浏览器选项卡，如果**刷新页面**，并不会丢失这些数据。
+    >
+    > 数据不可以跨选项卡共享。
+
+# WebAssembly 性能最佳做法
+
+## 避免不必要的组件呈现
+
+​	借助 Blazor 的差分算法，当算法感知到组件未更改时，不用重新呈现组件。 可重写 ComponentBase.ShouldRender 来实现对组件呈现的精细控制。
+
+​	如果创作了一个仅限 UI 的组件，且该组件在最初呈现后从未更改，则请将 ShouldRender 配置为返回 `false`：
+
+```csharp
+@code {
+    protected override bool ShouldRender() => false;
+}
+```
+
+​	以下示例，默认不重绘组件，但在数据更新后允许重绘，且重绘后立即禁止下次重绘：
+
+```csharp
+<p>Current count: @currentCount</p>
+
+<button @onclick="IncrementCount">Click me</button>
+
+@code {
+    private int currentCount = 0;
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+
+    protected override void OnAfterRender(bool first)
+    {
+        shouldRender = false;
+    }
+
+    private void IncrementCount()
+    {
+        currentCount++;
+        shouldRender = true;
+    }
+}
+```
+
+## 虚拟化可重用的片段
+
+​	组件提供了一种方便的方法来生成代码和标记的可重用片段。 通常，我们建议创作最符合应用要求的单个组件。 需要注意的是，每个附加的子组件都会增加呈现父组件所需的总时间。 对于大多数应用，额外的开销可以忽略不计。 生成大量组件的应用应考虑使用策略来减少处理开销，例如限制所呈现的组件的数量。
+
+​	如果某网格或列表要呈现数百个包含组件的行，则该网格或列表呈现时会大量使用处理器。 请考虑将网格或列表布局虚拟化，以便在任何给定时间都只呈现其中的一部分组件。
+
+## 不要用 JavaScript 互操作来封送数据
+
+​	在 Blazor WebAssembly 中，JavaScript (JS) 互操作调用必须遍历 WebAssembly-JS 边界。 如果跨两个上下文序列化和反序列化内容，会产生应用处理开销。 频繁的 JS 互操作调用通常会对性能产生负面影响。 为了减少数据的跨边界封送，请确定应用能否将许多小的有效负载合并到一个大的有效负载中，以避免在 WebAssembly 与 JS 之间频繁切换上下文。
+
+## 使用 System.Text.Json
+
+​	Blazor 的 JS 互操作实现依赖于 System.Text.Json - 这是一个性能高但内存分配较低的 JSON 序列化库。 与添加一个或多个备用 JSON 库相比，使用 System.Text.Json 不会增加应用有效负载的大小。
+
+## 根据需要使用同步的和未封装的 JS 互操作 API
+
+​	Blazor WebAssembly 额外提供了两个 IJSRuntime 版本。
+
+​	IJSInProcessRuntime 允许同步调用 JS 互操作调用，其开销低于异步版本。
+
+```csharp
+@inject IJSRuntime JS
+
+@code {
+    protected override void OnInitialized()
+    {
+        var jsInProcess = (IJSInProcessRuntime)JS;
+
+        var value = jsInProcess.Invoke<string>("jsInteropCall");
+    }
+}
+```
+
+​	WebAssemblyJSRuntime 允许使用未封装的 JS 互操作调用。
+
+```javascript
+function jsInteropCall() {
+  return BINDING.js_to_mono_obj("Hello world");
+}
+```
+
+```csharp
+@inject IJSRuntime JS
+
+@code {
+    protected override void OnInitialized()
+    {
+        var jsInProcess = (WebAssemblyJSRuntime)JS;
+
+        var value = jsInProcess.InvokeUnmarshalled<string>("jsInteropCall");
+    }
+}
+```
+
+# 高级方案
+
+## RenderTreeBuilder 手动逻辑
+
+​	RenderTreeBuilder 提供用于操作组件和元素的方法，包括在 C# 代码中手动生成组件。
+
+> 使用 RenderTreeBuilder 创建组件是一种高级方案。 格式不正确的组件（例如，未封闭的标记标签）可能导致未定义的行为。
+
+```csharp
+@* Item 组件 *@
+<h2>Pet Details Component</h2>
+
+<p>@PetDetailsQuote</p>
+
+@code
+{
+    [Parameter]
+    public string PetDetailsQuote { get; set; }
+}
+```
+
+```csharp
+@* List 组件 *@
+@page "/BuiltContent"
+
+<h1>Build a component</h1>
+
+@CustomRender
+
+<button type="button" @onclick="RenderComponent">
+    Create three Pet Details components
+</button>
+
+@code {
+    private RenderFragment CustomRender { get; set; }
+    
+    private RenderFragment CreateComponent() => builder =>
+    {
+        for (var i = 0; i < 3; i++) 
+        {
+            builder.OpenComponent(0, typeof(PetDetails));
+            builder.AddAttribute(1, "PetDetailsQuote", "Someone's best friend!");
+            builder.CloseComponent();
+        }
+    };    
+    
+    private void RenderComponent()
+    {
+        CustomRender = CreateComponent();
+    }
+}
+```
+
+​	以上示例，手动的绘制 Item 组件到 List 组件中。
+
+​	需要注意的是，builder 的方法中的序列号是源代码行号。Blazor 的差分算法依赖对应于不同代码行的序列号。请对序列号的参数进行硬编码。 **通过计算或计数器生成序列号可能导致性能不佳。**
+
+### 序列号与代码行号相关，而不与执行顺序相关
+
+​	Razor 组件文件 (`.razor`) 始终被编译。 与解释代码相比，编译具有潜在优势，因为编译步骤可用于注入信息，从而在运行时提高应用性能。
+
+​	这些改进的关键示例涉及*序列号*。 序列号向运行时指示哪些输出来自哪些不同的已排序代码行。 运行时使用此信息在线性时间内生成高效的树上差分，这比常规树上差分算法通常可以做到的速度快得多。
+
+​	在具有深度嵌套的复杂结构（尤其是带有循环）的更真实的情况下，性能成本通常会更高。 **差分算法必须深入递归到呈现树中，而不是立即确定已插入或删除的循环块或分支。** 这通常导致必须生成更长的编辑脚本，因为差分算法获知了关于新旧结构之间关系的错误信息。
+
+​	正确的实例：
+
+```csharp
+if (someFlag)
+{
+    builder.AddContent(0, "First");
+}
+
+builder.AddContent(1, "Second");
+```
+
+​	当 `someFlag=true` 时首次绘制，而当 `someFlag=false` 重新绘制时，生成器会通过序列号识别出 “需要删除序列号为1的元素”。
+
+​	错误的实例：
+
+```csharp
+var seq = 0;
+
+if (someFlag)
+{
+    builder.AddContent(seq++, "First");
+}
+
+builder.AddContent(seq++, "Second");
+```
+
+​		当 `someFlag=true` 时首次绘制，而当 `someFlag=false` 重新绘制时，生成器会因为失真的序列号而认为：“需要把第一条数据的'first'更新为'second'，然后删除第二条数据”。
+
+### 指南和结论
+
+- **如果动态生成序列号，则应用性能会受到影响。**
+- 该框架无法在运行时自动创建自己的序列号，因为除非在编译时捕获了必需的信息，否则这些信息不存在。
+- 不要编写手动实现的冗长 RenderTreeBuilder 逻辑块。 优先使用 `.razor` 文件并允许编译器处理序列号。
+  - 如果无法避免 RenderTreeBuilder 手动逻辑，请将较长的代码块拆分为封装在 OpenRegion 调用中的较小部分。 
+    - **每个区域都有自己的独立序列号空间，因此可在每个区域内从零（或任何其他任意数）重新开始。**
+- **如果序列号已硬编码，则差分算法仅要求序列号的值增加。 初始值和间隔不相关。** 一个合理选择是使用代码行号作为序列号。
+- Blazor 使用序列号，而其他树上差分 UI 框架不使用它们。 使用序列号时，差分速度要快得多，并且 Blazor 的优势在于编译步骤可为编写 `.razor` 文件的开发人员自动处理序列号。
