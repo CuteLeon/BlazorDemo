@@ -3104,3 +3104,5 @@ builder.Services.AddAuthorizationCore();
 - 用户属于某个角色。
 - 用户具有声明。
 - 满足策略要求。
+
+> TODO: https://docs.microsoft.com/zh-cn/aspnet/core/blazor/state-management?view=aspnetcore-3.1&pivots=webassembly
