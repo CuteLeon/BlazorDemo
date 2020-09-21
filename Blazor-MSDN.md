@@ -3295,6 +3295,23 @@ function jsInteropCall() {
 }
 ```
 
+```csharp
+@* List 组件 *@
+class ListComponent :ComponentBase
+{
+    protected override void BuildRenderTree(RenderTreeBuilder builder)
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            builder.OpenComponent(0, typeof(PetDetails));
+            builder.AddAttribute(1, "PetDetailsQuote", "Someone's best friend!");
+            builder.CloseComponent();
+        }
+        // base.BuildRenderTree(builder);
+    }
+}
+```
+
 ​	以上示例，手动的绘制 Item 组件到 List 组件中。
 
 ​	需要注意的是，builder 的方法中的序列号是源代码行号。Blazor 的差分算法依赖对应于不同代码行的序列号。请对序列号的参数进行硬编码。 **通过计算或计数器生成序列号可能导致性能不佳。**
